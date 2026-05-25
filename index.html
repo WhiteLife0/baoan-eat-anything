@@ -339,14 +339,14 @@ function showRate(idx){let h=gh();if(idx>=h.length)return;let m=document.getElem
 function bDrops(){let rc=document.getElementById('rc'),ra=document.getElementById('ra');rc.innerHTML='<option value="all">不限菜系</option>'+[...new Set(DATA.map(r=>gOf(r)))].map(g=>`<option value="${g}">${g}</option>`).join('');ra.innerHTML='<option value="all">不限区域</option>'+[...new Set(DATA.map(r=>r.location_area))].sort().map(a=>`<option value="${a}">${a}</option>`).join('')}
 
 // ===================== BATTLE with PeerJS =====================
-let peer=null,conn=null,myPicks=[],oppPicks=[],isHost=false,gameStarted=false,timerInterval=null,myConfirmed=false,oppConfirmed=false,currentPeerId='';
+let peer=null,conn=null,myPicks=[],oppPicks=[],isHost=false,gameStarted=false,timerInterval=null,myConfirmed=false,oppConfirmed=false,currentPeerId='',connReady=false;
 
 function createRoom(){
-  if(peer){peer.destroy()}
+  if(peer){peer.destroy();peer=null}conn=null;connReady=false;
   myPicks=[];oppPicks=[];gameStarted=false;myConfirmed=false;oppConfirmed=false;
   let code=String(Math.floor(100000+Math.random()*900000));
   let peerId='eat'+code;
-  peer=new Peer(peerId);
+  peer=new Peer(peerId,{debug:0});
   peer.on('open',id=>{
     currentPeerId=id;
     isHost=true;
@@ -358,31 +358,38 @@ function createRoom(){
   });
   peer.on('connection',c=>{
     conn=c;setupConn();
-    document.getElementById('peer-status').textContent='✅ 对方已连接！';
-    startPicking();
+    conn.on('open',()=>{
+      connReady=true;
+      document.getElementById('peer-status').textContent='✅ 对方已连接！';
+      conn.send({type:'ready'});
+    });
   });
-  peer.on('error',e=>{t('连接错误: '+e.type);console.error(e)});
+  peer.on('error',e=>{t('连接失败');console.error(e);document.getElementById('peer-status').textContent='❌ 连接失败，请重试'});
+  peer.on('disconnected',()=>{peer.reconnect()});
 }
 
 function joinRoom(){
   let code=document.getElementById('join-code').value.trim();
   if(!code){t('请输入匹配码');return}
-  let peerId='eat'+code;
-  if(peer){peer.destroy()}
+  if(peer){peer.destroy();peer=null}conn=null;connReady=false;
   myPicks=[];oppPicks=[];gameStarted=false;myConfirmed=false;oppConfirmed=false;
-  peer=new Peer();
+  let peerId='eat'+code;
+  peer=new Peer(null,{debug:0});
   peer.on('open',id=>{
-    currentPeerId=id;
-    isHost=false;
+    currentPeerId=id;isHost=false;
     conn=peer.connect(peerId,{reliable:true});
     setupConn();
-    document.getElementById('battle-connect').style.display='none';
-    document.getElementById('battle-lobby').style.display='block';
-    document.getElementById('code-show').innerHTML=`已加入房间<div style="font-size:14px;margin-top:4px">匹配码: ${code}</div>`;
-    document.getElementById('peer-status').textContent='✅ 已连接！';
-    startPicking();
+    conn.on('open',()=>{
+      connReady=true;
+      document.getElementById('battle-connect').style.display='none';
+      document.getElementById('battle-lobby').style.display='block';
+      document.getElementById('code-show').innerHTML=`已加入房间<div style="font-size:14px;margin-top:4px">匹配码: ${code}</div>`;
+      document.getElementById('peer-status').textContent='✅ 已连接！';
+      conn.send({type:'ready'});
+    });
   });
-  peer.on('error',e=>{t('连接失败: '+e.type);console.error(e)});
+  peer.on('error',e=>{t('连接失败');console.error(e);document.getElementById('peer-status').textContent='❌ 连接失败，请输入正确的匹配码'});
+  peer.on('disconnected',()=>{peer.reconnect()});
 }
 
 function setupConn(){
@@ -392,6 +399,9 @@ function setupConn(){
     else if(data.type==='result'){showBattleResult(data.result)}
     else if(data.type==='finalRPS'){handleFinalRPS(data)}
     else if(data.type==='finalRPSResult'){document.getElementById('final-rps-result').innerHTML=data.text}
+    else if(data.type==='ready'){
+      if(!gameStarted)startPicking();
+    }
   });
   conn.on('close',()=>{t('对方已断开');document.getElementById('peer-status').textContent='❌ 连接断开'});
 }
