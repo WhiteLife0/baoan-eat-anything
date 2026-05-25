@@ -498,43 +498,47 @@ function doBattle(){
   let p2rs=oppPicks.map(n=>DATA.find(x=>x.name===n)).filter(Boolean);
   if(p1rs.length!==5||p2rs.length!==5){t('数据异常');return}
 
-  let p1g=p1rs.map(r=>gOf(r)), p2g=p2rs.map(r=>gOf(r));
+  // 按餐厅名字比对
+  let p1Names=p1rs.map(r=>r.name), p2Names=p2rs.map(r=>r.name);
   let matches=[];
-  for(let i=0;i<5;i++)for(let j=0;j<5;j++)if(p1g[i]===p2g[j])matches.push({p1i:i,p2i:j,group:p1g[i]});
+  for(let i=0;i<5;i++)if(p2Names.includes(p1Names[i]))matches.push(p1Names[i]);
 
-  // 如果有相同菜系 → 好事！显示匹配的餐厅
-  // 如果没有相同菜系 → 需要剪刀石头布决胜负
-  let result={matches:matches,p1Names:p1rs.map(r=>r.name),p2Names:p2rs.map(r=>r.name),p1Groups:p1g,p2Groups:p2g};
+  let result={matches:matches,p1Names:p1Names,p2Names:p2Names};
   showBattleResult(result);
   if(conn)conn.send({type:'result',result:result});
 }
 
 function showBattleResult(result){
-  let p1Names=result.p1Names, p2Names=result.p2Names;
+  let p1Names=result.p1Names, p2Names=result.p2Names, matches=result.matches;
   let html='<div style="text-align:center"><div style="font-size:17px;font-weight:700;color:var(--heart);margin-bottom:8px">⚔️ 对战结果</div>';
 
-  if(result.matches.length>0){
-    // 有相同菜系 → 展示匹配的餐厅
-    html+=`<div style="font-size:14px;color:#388e3c;font-weight:600;margin-bottom:8px">🎉 有 ${result.matches.length} 组相同菜系！</div>`;
-    result.matches.forEach(m=>{
-      html+=`<div style="background:#e8f5e9;border-radius:10px;padding:8px;margin-bottom:5px;font-size:12px">
-        <div style="font-weight:600;color:#388e3c">${m.group} 匹配！</div>
-        <div>👨 ${p1Names[m.p1i]} ↔ 👩 ${p2Names[m.p2i]}</div>
-        <div style="color:#666;font-size:11px">菜系相同，随便选一家！</div>
-      </div>`;
+  if(matches.length===1){
+    html+=`<div style="font-size:15px;color:#388e3c;font-weight:600;margin-bottom:8px">🎉 你们都选了同一家！</div>`;
+    html+=`<div style="background:#e8f5e9;border-radius:14px;padding:16px;margin-bottom:10px;font-size:18px;font-weight:700;color:#388e3c">${matches[0]}</div>`;
+    html+=`<div style="font-size:13px;color:#666">心有灵犀！就去这家吧 ❤️</div>`;
+  }else if(matches.length>=2){
+    html+=`<div style="font-size:14px;color:#ff6b4a;font-weight:600;margin-bottom:8px">🤔 有 ${matches.length} 家相同！</div>`;
+    html+=`<div style="font-size:12px;color:#666;margin-bottom:10px">猜拳吧，赢的选其中一家！</div>`;
+    matches.forEach(m=>{
+      html+=`<div style="background:var(--light);border-radius:8px;padding:6px;margin-bottom:4px;font-size:13px;font-weight:600">✅ ${m}</div>`;
     });
-  } else {
-    // 没有相同菜系 → 剪刀石头布决胜负
-    html+=`<div style="font-size:14px;color:#ff6b4a;font-weight:600;margin-bottom:8px">😤 没有相同菜系！剪刀石头布决胜负！</div>`;
-    html+=`<div style="font-size:12px;color:#666;margin-bottom:8px">你代表 👨 方，老婆代表 👩 方，谁赢就吃谁选的</div>`;
     html+=`<div style="display:flex;gap:6px;justify-content:center;margin:10px 0">
       <button class="btn" onclick="sendFinalRPS('✊')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✊</button>
       <button class="btn" onclick="sendFinalRPS('✋')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✋</button>
       <button class="btn" onclick="sendFinalRPS('✌️')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✌️</button>
     </div>`;
     html+=`<div id="final-rps-result" style="font-size:14px;font-weight:700;color:var(--heart);margin-top:6px"></div>`;
-    html+=`<div style="margin-top:8px;font-size:11px;color:#999">👨 你的 ${p1Names.slice(0,3).join('、')}...</div>`;
-    html+=`<div style="font-size:11px;color:#999">👩 她的 ${p2Names.slice(0,3).join('、')}...</div>`;
+  }else{
+    html+=`<div style="font-size:14px;color:#ff6b4a;font-weight:600;margin-bottom:8px">😤 没有相同的店！</div>`;
+    html+=`<div style="font-size:12px;color:#666;margin-bottom:10px">猜拳决胜负，赢的人说了算！</div>`;
+    html+=`<div style="display:flex;gap:6px;justify-content:center;margin:10px 0">
+      <button class="btn" onclick="sendFinalRPS('✊')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✊</button>
+      <button class="btn" onclick="sendFinalRPS('✋')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✋</button>
+      <button class="btn" onclick="sendFinalRPS('✌️')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✌️</button>
+    </div>`;
+    html+=`<div id="final-rps-result" style="font-size:14px;font-weight:700;color:var(--heart);margin-top:6px"></div>`;
+    html+=`<div style="margin-top:8px;font-size:11px;color:#999">👨 ${p1Names.slice(0,3).join('、')}...</div>`;
+    html+=`<div style="font-size:11px;color:#999">👩 ${p2Names.slice(0,3).join('、')}...</div>`;
   }
   html+='</div>';
   document.getElementById('battle-result').innerHTML=html;
