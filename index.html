@@ -344,13 +344,14 @@ let peer=null,conn=null,myPicks=[],oppPicks=[],isHost=false,gameStarted=false,ti
 function createRoom(){
   if(peer){peer.destroy()}
   myPicks=[];oppPicks=[];gameStarted=false;myConfirmed=false;oppConfirmed=false;
-  peer=new Peer();
+  let code=String(Math.floor(100000+Math.random()*900000));
+  peer=new Peer(code);
   peer.on('open',id=>{
     currentPeerId=id;
     isHost=true;
     document.getElementById('battle-connect').style.display='none';
     document.getElementById('battle-lobby').style.display='block';
-    document.getElementById('code-show').innerHTML=`匹配码<div style="font-size:26px;margin-top:4px">${id}</div>`;
+    document.getElementById('code-show').innerHTML=`匹配码<div style="font-size:34px;font-weight:900;margin-top:6px;letter-spacing:6px">${id}</div>`;
     document.getElementById('peer-status').textContent='等待对方加入...';
     t('房间已开启！');
   });
