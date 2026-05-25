@@ -149,6 +149,10 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 /* Toast */
 .toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:var(--dark);color:white;padding:8px 20px;border-radius:20px;font-size:12px;z-index:9999;animation:ti 2s forwards;pointer-events:none;white-space:nowrap}
 @keyframes ti{0%{opacity:0;transform:translateX(-50%) translateY(10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}75%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+.flirt-box{background:linear-gradient(135deg,#fff0f3 0%,#fff9f9 100%);border-radius:14px;padding:12px 14px;margin-bottom:14px;text-align:center;cursor:pointer;border:1.5px dashed var(--pink);box-shadow:var(--sh);transition:transform .2s;user-select:none}
+.flirt-box:active{transform:scale(.98)}
+.flirt-text{font-size:14px;color:var(--heart);font-weight:500;line-height:1.5;min-height:42px;display:flex;align-items:center;justify-content:center}
+.flirt-hint{font-size:10px;color:#ccc;margin-top:4px}
 </style>
 </head>
 <body>
@@ -160,9 +164,13 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
     <div class="app-sub">深圳 · 宝安区 · 350家</div>
   </header>
 
-  <!-- HOME -->
-  <div id="pg-home" class="page active">
-    <div class="sec"><div class="sec-title">🎲 随机推荐</div><div class="feat-scroll" id="feat-g"></div></div>
+ <!-- HOME -->
+ <div id="pg-home" class="page active">
+    <div class="flirt-box" id="flirt-box" onclick="nextFlirt()">
+      <div class="flirt-text" id="flirt-text"></div>
+      <div class="flirt-hint">戳一下换一句 💬</div>
+    </div>
+   <div class="sec"><div class="sec-title">🎲 随机推荐</div><div class="feat-scroll" id="feat-g"></div></div>
     <div class="sec" id="s-favs"><div class="sec-title">❤️ 我的珍藏</div><div id="fav-quick"></div></div>
     <div class="sec" id="s-hist"><div class="sec-title">📋 最近吃过</div><div id="hist-quick"></div></div>
     <div class="sec" id="s-rated"><div class="sec-title">⭐ 高分推荐</div><div id="top-rated"></div></div>
@@ -585,8 +593,13 @@ function leaveRoom(){
 }
 
 // Init
-function init(){buildChips();bDrops();renderHome();renderMenu();renderFavs();renderHist();upRcnt()}
+function init(){buildChips();bDrops();renderHome();renderMenu();renderFavs();renderHist();upRcnt();startFlirt()}
 document.addEventListener('DOMContentLoaded',init);
+
+let flirtIdx=0;
+const FLIRTS=['你知道我为什么喜欢吃糖吗？因为你就是我的蜜糖 🍯','最近手头有点紧，能不能借你的手牵一牵？🤝','你属什么的？不，你属于我的 ❤️','我好像得了一种病，一种见不到你就会发作的病 🤒','你的眼睛里有星星，一闪一闪亮晶晶 ✨','我想去取一下东西，取一下你的心 💘','你知道我和唐僧的区别吗？唐僧想取经，我想娶你 💍','被你赞过的朋友圈，叫甜甜圈 🍩','这辈子最幸福的事，就是和喜欢的人在一起吃好吃的 🍜','我可以没有全世界的花，但一定要有眼里全是你的人 🌸','遇见你之后，我变得好老套：想牵手逛街，想拥抱接吻 💋','你上辈子一定是碳酸饮料吧？看到你就开心得冒泡 🫧','我想要的很简单，时光还在，你还在 ⏰','你知道我最大的缺点是什么吗？缺点你 😝','不要和我吵架，否则我容易一嘴巴亲过去 💋','你今天特别讨厌，讨人喜欢和百看不厌 😍','我本来要行走江湖的，但遇到你我觉得可以先停一停 🏕️','世界就像一个巨大的夹娃娃机，我隔着玻璃只想要你 🧸','你知道今天刮什么风吗？想你想得发疯 🌪️','所有的温柔眷恋，都是对你我之间的情愫而言 💌'];
+function nextFlirt(){flirtIdx=(flirtIdx+1)%FLIRTS.length;document.getElementById('flirt-text').textContent=FLIRTS[flirtIdx]}
+function startFlirt(){flirtIdx=Math.floor(Math.random()*FLIRTS.length);document.getElementById('flirt-text').textContent=FLIRTS[flirtIdx];setInterval(nextFlirt,8000)}
 </script>
 </body>
 </html>
