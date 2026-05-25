@@ -389,8 +389,9 @@ function setupConn(){
   conn.on('data',data=>{
     if(data.type==='picks'){oppPicks=data.picks;renderOppPicks()}
     else if(data.type==='confirm'){oppConfirmed=true;checkBothConfirm()}
-    else if(data.type==='rps'){handleRPS(data)}
-    else if(data.type==='result'){showBattleResult(data)}
+    else if(data.type==='result'){showBattleResult(data.result)}
+    else if(data.type==='finalRPS'){handleFinalRPS(data)}
+    else if(data.type==='finalRPSResult'){document.getElementById('final-rps-result').innerHTML=data.text}
   });
   conn.on('close',()=>{t('对方已断开');document.getElementById('peer-status').textContent='❌ 连接断开'});
 }
@@ -487,45 +488,72 @@ function doBattle(){
   let p2rs=oppPicks.map(n=>DATA.find(x=>x.name===n)).filter(Boolean);
   if(p1rs.length!==5||p2rs.length!==5){t('数据异常');return}
 
-  let p1g=p1rs.map(r=>gOf(r)),p2g=p2rs.map(r=>gOf(r));
-  let conflicts=[],usedP1=new Set(),usedP2=new Set();
-  for(let i=0;i<5;i++)for(let j=0;j<5;j++)if(p1g[i]===p2g[j]&&!usedP1.has(i)&&!usedP2.has(j)){conflicts.push({p1i:i,p2i:j,group:p1g[i]});usedP1.add(i);usedP2.add(j)}
+  let p1g=p1rs.map(r=>gOf(r)), p2g=p2rs.map(r=>gOf(r));
+  let matches=[];
+  for(let i=0;i<5;i++)for(let j=0;j<5;j++)if(p1g[i]===p2g[j])matches.push({p1i:i,p2i:j,group:p1g[i]});
 
-  let result={conflicts:conflicts,p1Names:p1rs.map(r=>r.name),p2Names:p2rs.map(r=>r.name)};
+  // 如果有相同菜系 → 好事！显示匹配的餐厅
+  // 如果没有相同菜系 → 需要剪刀石头布决胜负
+  let result={matches:matches,p1Names:p1rs.map(r=>r.name),p2Names:p2rs.map(r=>r.name),p1Groups:p1g,p2Groups:p2g};
   showBattleResult(result);
   if(conn)conn.send({type:'result',result:result});
 }
 
 function showBattleResult(result){
+  let p1Names=result.p1Names, p2Names=result.p2Names;
   let html='<div style="text-align:center"><div style="font-size:17px;font-weight:700;color:var(--heart);margin-bottom:8px">⚔️ 对战结果</div>';
-  if(!result.conflicts.length){
-    html+='<div style="font-size:13px;color:#666">🎉 没有菜系冲突！双方任意选一家都行！</div>';
-  }else{
-    html+=`<div style="font-size:12px;color:#666;margin-bottom:6px">发现${result.conflicts.length}组菜系冲突</div>`;
-    result.conflicts.forEach((c,i)=>{
-      html+=`<div style="background:var(--light);border-radius:10px;padding:8px;margin-bottom:5px;font-size:11px"><div><b>${c.group}</b> 冲突:</div><div>👨 ${result.p1Names[c.p1i]} VS 👩 ${result.p2Names[c.p2i]}</div><div style="display:flex;gap:6px;justify-content:center;margin:6px 0"><button class="btn" onclick="sendRPS(${i},'✊')" style="width:44px;height:44px;border-radius:50%;font-size:22px">✊</button><button class="btn" onclick="sendRPS(${i},'✋')" style="width:44px;height:44px;border-radius:50%;font-size:22px">✋</button><button class="btn" onclick="sendRPS(${i},'✌️')" style="width:44px;height:44px;border-radius:50%;font-size:22px">✌️</button></div><div id="rps-${i}" style="font-weight:600;color:var(--heart);font-size:12px"></div></div>`;
+
+  if(result.matches.length>0){
+    // 有相同菜系 → 展示匹配的餐厅
+    html+=`<div style="font-size:14px;color:#388e3c;font-weight:600;margin-bottom:8px">🎉 有 ${result.matches.length} 组相同菜系！</div>`;
+    result.matches.forEach(m=>{
+      html+=`<div style="background:#e8f5e9;border-radius:10px;padding:8px;margin-bottom:5px;font-size:12px">
+        <div style="font-weight:600;color:#388e3c">${m.group} 匹配！</div>
+        <div>👨 ${p1Names[m.p1i]} ↔ 👩 ${p2Names[m.p2i]}</div>
+        <div style="color:#666;font-size:11px">菜系相同，随便选一家！</div>
+      </div>`;
     });
+  } else {
+    // 没有相同菜系 → 剪刀石头布决胜负
+    html+=`<div style="font-size:14px;color:#ff6b4a;font-weight:600;margin-bottom:8px">😤 没有相同菜系！剪刀石头布决胜负！</div>`;
+    html+=`<div style="font-size:12px;color:#666;margin-bottom:8px">你代表 👨 方，老婆代表 👩 方，谁赢就吃谁选的</div>`;
+    html+=`<div style="display:flex;gap:6px;justify-content:center;margin:10px 0">
+      <button class="btn" onclick="sendFinalRPS('✊')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✊</button>
+      <button class="btn" onclick="sendFinalRPS('✋')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✋</button>
+      <button class="btn" onclick="sendFinalRPS('✌️')" style="width:50px;height:50px;border-radius:50%;font-size:26px">✌️</button>
+    </div>`;
+    html+=`<div id="final-rps-result" style="font-size:14px;font-weight:700;color:var(--heart);margin-top:6px"></div>`;
+    html+=`<div style="margin-top:8px;font-size:11px;color:#999">👨 你的 ${p1Names.slice(0,3).join('、')}...</div>`;
+    html+=`<div style="font-size:11px;color:#999">👩 她的 ${p2Names.slice(0,3).join('、')}...</div>`;
   }
   html+='</div>';
   document.getElementById('battle-result').innerHTML=html;
 }
 
-function sendRPS(idx,choice){
-  if(conn)conn.send({type:'rps',idx:idx,choice:choice});
-  document.getElementById('rps-'+idx).innerHTML='你出了 '+choice+'，等待对方...';
-  window._myRPS=window._myRPS||{};
-  window._myRPS[idx]=choice;
+function sendFinalRPS(choice){
+  document.getElementById('final-rps-result').innerHTML='你出了 '+choice+'，等待对方...';
+  if(conn)conn.send({type:'finalRPS',choice:choice});
+  window._finalMyRPS=choice;
 }
 
-function handleRPS(data){
-  let myChoice=window._myRPS?.[data.idx];
-  if(myChoice){
-    let oppChoice=data.choice,p1Choice=isHost?myChoice:oppChoice,p2Choice=isHost?oppChoice:myChoice;
-    let result;if(p1Choice===p2Choice)result='平局！';else if((p1Choice==='✊'&&p2Choice==='✌️')||(p1Choice==='✋'&&p2Choice==='✊')||(p1Choice==='✌️'&&p2Choice==='✋'))result='👨 你赢了！';else result='👩 老婆赢了！';
-    document.getElementById('rps-'+data.idx).innerHTML=`你${myChoice} vs 对方${data.choice}<br>${result}`;
-    if(conn)conn.send({type:'rpsResult',idx:data.idx,text:result});
+function handleFinalRPS(data){
+  let myChoice=window._finalMyRPS;
+  if(!myChoice) return;
+  let oppChoice=data.choice;
+  let result,rstText;
+  if(myChoice===oppChoice){result='tie';rstText='平局！再来一次 ✊✋✌️'}
+  else if((myChoice==='✊'&&oppChoice==='✌️')||(myChoice==='✋'&&oppChoice==='✊')||(myChoice==='✌️'&&oppChoice==='✋')){
+    result='win';rstText='🎉 你赢了！去吃你选的！';
+  }else{
+    result='lose';rstText='👩 老婆赢了！去吃她选的！';
   }
+  document.getElementById('final-rps-result').innerHTML=`你${myChoice} vs 对方${oppChoice}<br>${rstText}`;
+  if(conn)conn.send({type:'finalRPSResult',text:rstText,choice:oppChoice});
 }
+
+// Update handleRPS to handle finalRPS too
+// We need to modify the conn data handler
+
 
 function leaveRoom(){
   clearInterval(timerInterval);
