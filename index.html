@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>今天吃什么 🐷</title>
+
+<!-- 餐厅数据 -->
+
+</head>
+<body>
+<div id="app">
+  <!-- ====== TOP HEADER ====== -->
+  <header>
+    <div class="header-lulu">
+      <svg viewBox="0 0 120 100" class="lulu-svg">
+        <!-- 左耳 -->
+        <ellipse cx="35" cy="15" rx="14" ry="12" fill="#FFD1DC"/>
+        <!-- 右耳 -->
+        <ellipse cx="85" cy="15" rx="14" ry="12" fill="#FFD1DC"/>
+        <!-- 身体 -->
+        <ellipse cx="60" cy="80" rx="50" ry="25" fill="#FFF0F0" stroke="#FFD1DC" stroke-width="1.5"/>
+        <!-- 脸 -->
+        <ellipse cx="60" cy="50" rx="38" ry="32" fill="#FFF5F5" stroke="#FFD1DC" stroke-width="1.5"/>
+        <!-- 鼻子 -->
+        <ellipse cx="60" cy="52" rx="10" ry="7" fill="#FFB6C1"/>
+        <ellipse cx="57" cy="50" rx="3" ry="2" fill="#fff" opacity="0.7"/>
+        <!-- 眼睛 - 眯眼笑 -->
+        <path d="M42 42 Q47 37 52 42" stroke="#555" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M68 42 Q73 37 78 42" stroke="#555" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- 嘴巴 - W形 -->
+        <path d="M54 60 Q57 56 60 60 Q63 56 66 60" stroke="#FF8FAB" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- 腮红 -->
+        <ellipse cx="35" cy="55" rx="8" ry="5" fill="#FFB6C1" opacity="0.4"/>
+        <ellipse cx="85" cy="55" rx="8" ry="5" fill="#FFB6C1" opacity="0.4"/>
+        <!-- 小手 -->
+        <ellipse cx="20" cy="65" rx="6" ry="4" fill="#FFF5F5" stroke="#FFD1DC" stroke-width="1"/>
+        <ellipse cx="100" cy="65" rx="6" ry="4" fill="#FFF5F5" stroke="#FFD1DC" stroke-width="1"/>
+      </svg>
+    </div>
+    <h1 class="app-title">🐷 今天吃什么</h1>
+    <p class="app-subtitle">深圳 · 宝安区美食指南</p>
+  </header>
+
+  <!-- ====== FLOATING FILTER BAR (Menu page) ====== -->
+  <div id="filter-bar" class="filter-bar">
+    <div class="filter-scroll" id="filter-scroll">
+      <button class="filter-chip active" data-cat="all">🍽️ 全部</button>
+    </div>
+    <div class="filter-actions">
+      <button class="filter-dropdown-btn" id="filter-dropdown-btn" onclick="toggleFilterDropdown()">▼ 更多筛选</button>
+    </div>
+    <!-- Dropdown filter panel -->
+    <div class="filter-dropdown" id="filter-dropdown" style="display:none">
+      <div class="filter-section">
+        <div class="filter-label">按菜系</div>
+        <div id="filter-cuisine" class="filter-grid"></div>
+      </div>
+      <div class="filter-section">
+        <div class="filter-label">按区域</div>
+        <div id="filter-area" class="filter-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== PAGES ====== -->
+
+  <!-- Menu Page -->
+  <div id="page-menu" class="page active">
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="搜索餐厅名称..." oninput="onSearch(this.value)">
+    </div>
+    <div class="resto-grid" id="resto-grid">
+      <!-- Rendered by JS -->
+    </div>
+    <div class="scroll-top" id="scroll-top" onclick="scrollToTop()">⬆</div>
+  </div>
+
+  <!-- Random Page -->
+  <div id="page-random" class="page">
+    <div class="random-container">
+      <!-- Restrict button area -->
+      <div class="random-controls" id="random-controls">
+        <div class="random-label">在限定范围内随机 🎯</div>
+        <div class="random-filters" id="random-filters">
+          <select id="random-cuisine" onchange="updateRandomBtn()">
+            <option value="all">不限菜系</option>
+          </select>
+          <select id="random-area" onchange="updateRandomBtn()">
+            <option value="all">不限区域</option>
+          </select>
+          <select id="random-price" onchange="updateRandomBtn()">
+            <option value="all">不限价位</option>
+          </select>
+        </div>
+        <div class="random-range-info" id="random-range-info">可在 233 家中随机</div>
+      </div>
+
+      <!-- Pick card -->
+      <div class="random-card" id="random-card" onclick="triggerRandom()">
+        <div class="random-question">今天想吃什么呢？</div>
+        <button class="random-btn" id="random-btn" onclick="event.stopPropagation(); triggerRandom()">
+          🎲 随机选一个！
+        </button>
+        <div class="random-hint">戳 lulu 也可以摇一摇哦~</div>
+      </div>
+
+      <!-- Result card -->
+      <div class="result-card" id="result-card" style="display:none">
+        <div class="result-close" onclick="closeResult()">✕</div>
+        <div class="result-lulu">🐷</div>
+        <div class="result-label">✨ 今天就吃这个吧 ✨</div>
+        <div class="result-name" id="result-name"></div>
+        <div class="result-tags" id="result-tags"></div>
+        <div class="result-detail" id="result-detail"></div>
+        <div class="result-actions">
+          <button class="result-action-btn fav-btn" onclick="markRandomFav()">❤️ 收藏</button>
+          <button class="result-action-btn hate-btn" onclick="markRandomHate()">💔 踩雷</button>
+          <button class="result-action-btn again-btn" onclick="triggerRandom()">🎲 再来一次</button>
+        </div>
+      </div>
+
+      <!-- Recent random history -->
+      <div class="recent-random" id="recent-random">
+        <div class="recent-random-title">🕐 最近摇出来的</div>
+        <div id="recent-random-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Favorites Page -->
+  <div id="page-favorites" class="page">
+    <div class="fav-header">
+      <span class="fav-header-icon">❤️</span> 我的收藏
+      <span class="fav-count" id="fav-count">0</span>
+    </div>
+    <div id="fav-empty" class="empty-state">
+      <div class="empty-lulu">😴</div>
+      <div class="empty-text">还没有收藏的餐厅哦~<br>去菜单逛逛吧！</div>
+    </div>
+    <div id="fav-list"></div>
+  </div>
+
+  <!-- History Page -->
+  <div id="page-history" class="page">
+    <div class="fav-header">
+      <span class="fav-header-icon">📋</span> 点餐记录
+      <span class="fav-count" id="history-count">0</span>
+    </div>
+    <div id="history-empty" class="empty-state">
+      <div class="empty-lulu">🍽️</div>
+      <div class="empty-text">还没有记录呢~<br>去随机摇一个吧！</div>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- ====== BOTTOM NAV ====== -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <div class="nav-item active" data-page="menu" onclick="switchPage('menu')">
+      <span class="nav-icon">🍽️</span>
+      <span class="nav-label">菜单</span>
+    </div>
+    <div class="nav-item" data-page="random" onclick="switchPage('random')">
+      <span class="nav-icon">🎲</span>
+      <span class="nav-label">随机</span>
+    </div>
+    <div class="nav-item" data-page="favorites" onclick="switchPage('favorites')">
+      <span class="nav-icon">❤️</span>
+      <span class="nav-label">收藏</span>
+      <span class="nav-badge" id="fav-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" data-page="history" onclick="switchPage('history')">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">记录</span>
+    </div>
+  </nav>
+</div>
+
+<script>
+// ====== DATA ======
+const RESTAURANTS = const RESTAURANTS = [{"name": "太二酸菜鱼(壹方城店)", "category": "川菜/酸菜鱼", "tags": ["酸菜鱼", "网红", "商场店"], "recommend": "老坛子酸菜鱼，酸爽开胃，鱼片嫩滑", "price_range": "80-120", "location_area": "宝安中心区-壹方城", "rating": 4.5}, {"name": "外婆家(壹方城店)", "category": "江浙菜", "tags": ["杭帮菜", "性价比高", "商场店"], "recommend": "茶香鸡、外婆红烧肉，经典杭帮风味", "price_range": "50-80", "location_area": "宝安中心区-壹方城", "rating": 4.2}, {"name": "陶陶居(壹方城店)", "category": "粤菜/茶楼", "tags": ["早茶", "老字号", "广式点心"], "recommend": "虾饺、烧卖、酥皮水牛奶菠萝包，地道广式早茶", "price_range": "100-150", "location_area": "宝安中心区-壹方城", "rating": 4.6}, {"name": "西贝莜面村(壹方城店)", "category": "西北菜", "tags": ["西北风味", "面食", "家庭聚餐"], "recommend": "西贝面筋、烤羊排、莜面鱼鱼", "price_range": "80-120", "location_area": "宝安中心区-壹方城", "rating": 4.3}, {"name": "喜茶(壹方城LAB店)", "category": "茶饮/甜品", "tags": ["网红茶饮", "LAB概念店", "奶茶"], "recommend": "多肉葡萄、芝芝莓莓，深圳首家LAB店体验", "price_range": "20-40", "location_area": "宝安中心区-壹方城", "rating": 4.4}, {"name": "寿司郎(壹方城店)", "category": "日料/寿司", "tags": ["回转寿司", "日料", "性价比"], "recommend": "三文鱼寿司、金枪鱼中腹，回转寿司性价比之选", "price_range": "80-150", "location_area": "宝安中心区-壹方城", "rating": 4.3}, {"name": "怂重庆火锅厂(壹方城店)", "category": "火锅/重庆火锅", "tags": ["重庆火锅", "网红", "麻辣"], "recommend": "鲜鸭血、毛肚、大刀腰片，正宗重庆牛油锅底", "price_range": "120-180", "location_area": "宝安中心区-壹方城", "rating": 4.5}, {"name": "姜虎东白丁烤肉(壹方城店)", "category": "韩式烤肉", "tags": ["韩国料理", "烤肉", "韩星品牌"], "recommend": "雪花牛肉、五花肉，韩国明星开的烤肉店", "price_range": "120-200", "location_area": "宝安中心区-壹方城", "rating": 4.3}, {"name": "蔡澜港式点心(壹方城店)", "category": "粤菜/港式点心", "tags": ["港式点心", "蔡澜品牌", "网红"], "recommend": "酥皮山楂叉烧包、赛螃蟹凤眼饺，创意港点", "price_range": "80-120", "location_area": "宝安中心区-壹方城", "rating": 4.4}, {"name": "克茗冰室(壹方城店)", "category": "茶餐厅", "tags": ["港式茶餐厅", "冰室", "性价比"], "recommend": "黯然销魂饭、招牌奶茶、漏奶华", "price_range": "40-70", "location_area": "宝安中心区-壹方城", "rating": 4.2}, {"name": "费大厨辣椒炒肉(壹方城店)", "category": "湘菜", "tags": ["湖南菜", "辣椒炒肉", "下饭"], "recommend": "辣椒炒肉、香芋蒸排骨、湘式小炒肉", "price_range": "60-100", "location_area": "宝安中心区-壹方城", "rating": 4.4}, {"name": "楠火锅(壹方城店)", "category": "火锅", "tags": ["重庆火锅", "复古风", "网红"], "recommend": "九宫格特色拼盘、耙鸡脚、雪山冰", "price_range": "100-160", "location_area": "宝安中心区-壹方城", "rating": 4.3}, {"name": "凑凑火锅·茶憩(壹方城店)", "category": "火锅/台式火锅", "tags": ["火锅", "奶茶", "台式"], "recommend": "大红袍珍珠奶茶配台式麻辣锅，火锅奶茶两不误", "price_range": "120-180", "location_area": "宝安中心区-壹方城", "rating": 4.4}, {"name": "点都德(壹方城店)", "category": "粤菜/茶楼", "tags": ["广式茶楼", "早茶", "老字号"], "recommend": "红米肠、虾饺、沙爹蒸金钱肚，经典广式早茶", "price_range": "80-130", "location_area": "宝安中心区-壹方城", "rating": 4.3}, {"name": "花厨(壹方城店)", "category": "西餐/融合菜", "tags": ["花主题", "约会圣地", "精致"], "recommend": "香草烤鸡、花厨彩虹卷，环境绝美的花艺餐厅", "price_range": "150-250", "location_area": "宝安中心区-壹方城", "rating": 4.5}, {"name": "农耕记(壹方城店)", "category": "湘菜/湖南土菜", "tags": ["湖南菜", "土菜", "农家风味"], "recommend": "柴火土鸡汤、辣椒炒肉、湖南米粉", "price_range": "60-100", "location_area": "宝安中心区-壹方城", "rating": 4.2}, {"name": "山禾田日料(壹方城店)", "category": "日料", "tags": ["日式料理", "精致", "寿司"], "recommend": "寿司拼盘、鳗鱼饭、日式炸鸡", "price_range": "100-180", "location_area": "宝安中心区-壹方城", "rating": 4.3}, {"name": "wagas(壹方城店)", "category": "西餐/轻食", "tags": ["健康轻食", "沙拉", "果汁"], "recommend": "煎牛肉沙拉、柠檬姜汁、能量碗", "price_range": "60-100", "location_area": "宝安中心区-壹方城", "rating": 4.1}, {"name": "桂满陇(壹方城店)", "category": "江浙菜", "tags": ["杭帮菜", "江南意境", "精致"], "recommend": "东坡肉、龙井虾仁、江南桂花糕，江南意境菜", "price_range": "100-160", "location_area": "宝安中心区-壹方城", "rating": 4.3}, {"name": "M Stand(壹方城店)", "category": "咖啡", "tags": ["精品咖啡", "网红", "工业风"], "recommend": "燕麦曲奇拿铁、鲜椰冰咖，高颜值咖啡", "price_range": "30-50", "location_area": "宝安中心区-壹方城", "rating": 4.2}, {"name": "海底捞(海雅缤纷城店)", "category": "火锅", "tags": ["火锅", "服务好", "连锁"], "recommend": "番茄锅底、捞派滑牛、扯面表演，服务天花板", "price_range": "120-180", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.5}, {"name": "探鱼(海雅缤纷城店)", "category": "川菜/烤鱼", "tags": ["烤鱼", "麻辣", "连锁"], "recommend": "重庆豆花烤鱼、鱼香味烤鱼，鲜嫩入味", "price_range": "70-120", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.3}, {"name": "八合里牛肉火锅(海雅缤纷城店)", "category": "火锅/潮汕牛肉", "tags": ["潮汕牛肉火锅", "鲜切", "牛肉"], "recommend": "吊龙伴、肥胼、牛肉丸，现切现涮的潮汕味", "price_range": "80-130", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.4}, {"name": "翠园(海雅缤纷城店)", "category": "粤菜", "tags": ["粤菜", "高端", "茶点"], "recommend": "脆皮烧鹅、鲍汁凤爪、腸粉，高端粤式茶楼", "price_range": "150-300", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.5}, {"name": "星巴克臻选(海雅缤纷城店)", "category": "咖啡", "tags": ["咖啡", "臻选店", "商务"], "recommend": "臻选手冲咖啡、冷萃咖啡，高品质咖啡体验", "price_range": "35-60", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.2}, {"name": "新仙清汤牛腩(海雅缤纷城店)", "category": "粤菜/牛腩", "tags": ["牛腩", "港式", "清汤"], "recommend": "清汤牛腩、咖喱牛腩、崩沙腩，牛腩中的爱马仕", "price_range": "70-120", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.3}, {"name": "四季榴莲(海雅缤纷城店)", "category": "甜品", "tags": ["榴莲", "甜品", "蛋糕"], "recommend": "榴莲千层蛋糕、榴莲泡芙，榴莲爱好者的天堂", "price_range": "40-80", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.2}, {"name": "鸟剑居酒屋(海雅缤纷城店)", "category": "日料/烧鸟", "tags": ["居酒屋", "日式烧鸟", "清酒"], "recommend": "烧鸟拼盘、芥末章鱼、梅子酒，深夜食堂氛围", "price_range": "100-200", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.4}, {"name": "乐凯撒披萨(海雅缤纷城店)", "category": "西餐/披萨", "tags": ["披萨", "榴莲披萨", "连锁"], "recommend": "爆果肉榴莲披萨、蒲烧鳗鱼披萨，深圳本土披萨品牌", "price_range": "60-100", "location_area": "宝安中心区-海雅缤纷城", "rating": 4.1}, {"name": "陈鹏鹏卤鹅(大仟里店)", "category": "粤菜/潮汕菜", "tags": ["卤鹅", "潮汕", "鹅肉"], "recommend": "金牌卤鹅饭、鹅肝、鹅肠，潮汕卤味标杆", "price_range": "50-100", "location_area": "宝安中心区-大仟里", "rating": 4.4}, {"name": "大鸽饭(大仟里店)", "category": "粤菜", "tags": ["鸽子", "煲仔饭", "广式"], "recommend": "红烧乳鸽、鸽子煲仔饭、盐焗鸽", "price_range": "70-120", "location_area": "宝安中心区-大仟里", "rating": 4.3}, {"name": "润园四季椰子鸡(大仟里店)", "category": "火锅/椰子鸡", "tags": ["椰子鸡", "海南风味", "清淡"], "recommend": "竹笙椰子鸡、腊味煲仔饭，清甜椰汁煮文昌鸡", "price_range": "100-160", "location_area": "宝安中心区-大仟里", "rating": 4.5}, {"name": "客语(大仟里店)", "category": "客家菜", "tags": ["客家菜", "土菜", "家庭聚餐"], "recommend": "客家酿豆腐、盐焗鸡、梅菜扣肉", "price_range": "60-100", "location_area": "宝安中心区-大仟里", "rating": 4.2}, {"name": "奈雪的茶(大仟里PRO店)", "category": "茶饮/面包", "tags": ["茶饮", "欧包", "网红"], "recommend": "霸气草莓、霸气橙子、软欧包", "price_range": "25-45", "location_area": "宝安中心区-大仟里", "rating": 4.2}, {"name": "江渔儿酸菜鱼(大仟里店)", "category": "川菜/酸菜鱼", "tags": ["酸菜鱼", "川菜", "下饭"], "recommend": "老坛酸菜鱼、酸菜鱼汤泡饭", "price_range": "60-100", "location_area": "宝安中心区-大仟里", "rating": 4.2}, {"name": "肥韬金牌茶餐厅(大仟里店)", "category": "茶餐厅", "tags": ["港式茶餐厅", "网红", "性价比"], "recommend": "芝士瀑布牛肉汉堡、黯然销魂饭、熊仔奶茶", "price_range": "50-80", "location_area": "宝安中心区-大仟里", "rating": 4.3}, {"name": "金戈戈香港豉油鸡(大仟里店)", "category": "粤菜/烧腊", "tags": ["豉油鸡", "烧腊", "港式"], "recommend": "香港豉油鸡、叉烧、烧鹅", "price_range": "50-80", "location_area": "宝安中心区-大仟里", "rating": 4.2}, {"name": "汕头八合里海记牛肉店(宝安店)", "category": "火锅/潮汕牛肉", "tags": ["潮汕牛肉火锅", "鲜切牛肉", "必吃榜"], "recommend": "雪花肉、吊龙、胸口捞，潮汕牛肉火锅必吃", "price_range": "90-150", "location_area": "宝安中心区", "rating": 4.5}, {"name": "胜记(宝安中心店)", "category": "粤菜", "tags": ["粤菜", "老字号", "酒楼"], "recommend": "招牌烧鹅、避风塘炒蟹、胜记虾饺", "price_range": "120-250", "location_area": "宝安中心区", "rating": 4.4}, {"name": "79号渔船海鲜(宝安店)", "category": "粤菜/海鲜", "tags": ["海鲜", "现捞现做", "聚餐"], "recommend": "蒜蓉粉丝蒸波士顿龙虾、三文鱼刺身、椒盐濑尿虾", "price_range": "150-350", "location_area": "宝安中心区", "rating": 4.5}, {"name": "莆田餐厅(宝安中心店)", "category": "闽菜", "tags": ["福建菜", "米其林", "海鲜"], "recommend": "莆田扁肉汤、兴化米粉、百秒黄花鱼", "price_range": "100-180", "location_area": "宝安中心区", "rating": 4.3}, {"name": "鑫泰(宝安中心店)", "category": "东南亚菜/泰国菜", "tags": ["泰国菜", "冬阴功", "咖喱"], "recommend": "咖喱皇炒蟹、冬阴功汤、泰式菠萝饭", "price_range": "100-200", "location_area": "宝安中心区", "rating": 4.2}, {"name": "悦景酒家(宝安中心店)", "category": "粤菜/海鲜", "tags": ["粤菜", "高端", "商务宴请"], "recommend": "红烧鲍鱼、清蒸东星斑、XO酱煎肠粉", "price_range": "200-500", "location_area": "宝安中心区", "rating": 4.6}, {"name": "盐田肠粉(西乡店)", "category": "粤菜/肠粉", "tags": ["肠粉", "早餐", "街坊店"], "recommend": "招牌蛋肉肠粉、鲜虾肠粉，西乡街坊早餐首选", "price_range": "8-20", "location_area": "西乡", "rating": 4.3}, {"name": "森记粉面世家(西乡店)", "category": "粤菜/粉面", "tags": ["云吞面", "竹升面", "老店"], "recommend": "鲜虾云吞面、牛腩面，传承三代的手工竹升面", "price_range": "15-35", "location_area": "西乡", "rating": 4.2}, {"name": "好好味面家(西乡店)", "category": "粤菜/粉面", "tags": ["云吞面", "街坊", "老字号"], "recommend": "云吞面、牛腩捞面，西乡老字号面馆", "price_range": "12-28", "location_area": "西乡", "rating": 4.1}, {"name": "四季烧烤(西乡店)", "category": "烧烤/烤串", "tags": ["烧烤", "宵夜", "大排档"], "recommend": "烤生蚝、烤鸡翅、烤茄子，西乡宵夜必去", "price_range": "40-80", "location_area": "西乡", "rating": 4.2}, {"name": "辉记炭火烧烤(西乡店)", "category": "烧烤", "tags": ["炭火烧烤", "宵夜", "深圳老字号"], "recommend": "炭烤生蚝、烤羊排、牛肉串，炭火香十足", "price_range": "50-100", "location_area": "西乡", "rating": 4.3}, {"name": "阿强家酸菜鱼(坪洲店)", "category": "川菜/酸菜鱼", "tags": ["酸菜鱼", "川菜", "连锁"], "recommend": "招牌酸菜鱼、香辣虾、口水鸡", "price_range": "60-100", "location_area": "坪洲", "rating": 4.2}, {"name": "新发烧腊(西乡店)", "category": "粤菜/烧腊", "tags": ["烧腊", "快餐", "排队王"], "recommend": "叉烧、烧鹅、油鸡，西乡排队最长的烧腊店", "price_range": "20-40", "location_area": "西乡", "rating": 4.4}, {"name": "汕头辉记肠粉(西乡店)", "category": "粤菜/肠粉", "tags": ["肠粉", "潮汕", "早餐"], "recommend": "牛肉肠粉、海鲜肠粉，潮汕风味肠粉", "price_range": "10-25", "location_area": "西乡", "rating": 4.1}, {"name": "张记猪脚饭(西乡店)", "category": "粤菜/隆江猪脚饭", "tags": ["猪脚饭", "隆江", "快餐"], "recommend": "隆江猪脚饭、卤猪蹄，肥而不腻", "price_range": "15-30", "location_area": "西乡", "rating": 4.0}, {"name": "揭阳老二大排档(翻身店)", "category": "粤菜/潮汕菜", "tags": ["潮汕大排档", "镬气", "街坊"], "recommend": "炒米粉、蚝烙、椒盐九肚鱼，地道潮汕大排档", "price_range": "30-70", "location_area": "翻身", "rating": 4.3}, {"name": "老兵牛蹄(翻身店)", "category": "粤菜/客家菜", "tags": ["牛蹄", "客家风味", "特色"], "recommend": "招牌牛蹄煲、客家酿豆腐，翻身排队名店", "price_range": "40-80", "location_area": "翻身", "rating": 4.2}, {"name": "台山佬黄鳝饭(翻身店)", "category": "粤菜/台山菜", "tags": ["黄鳝饭", "煲仔饭", "台山"], "recommend": "黄鳝煲仔饭、台山五味鹅", "price_range": "40-80", "location_area": "翻身", "rating": 4.1}, {"name": "龟老吉甜品(翻身店)", "category": "甜品/糖水", "tags": ["糖水", "龟苓膏", "老字号"], "recommend": "招牌龟苓膏、杨枝甘露、红豆沙", "price_range": "10-25", "location_area": "翻身", "rating": 4.1}, {"name": "老兵烧烤(翻身店)", "category": "烧烤", "tags": ["烧烤", "宵夜", "大排档"], "recommend": "烤生蚝、烤鱼、蜜汁烤翅", "price_range": "40-80", "location_area": "翻身", "rating": 4.0}, {"name": "肥婆麻辣烫(翻身店)", "category": "小吃/麻辣烫", "tags": ["麻辣烫", "街坊", "性价比"], "recommend": "招牌麻辣烫、麻辣拌，翻身最火的麻辣烫", "price_range": "15-35", "location_area": "翻身", "rating": 4.1}, {"name": "张记潮汕砂锅粥(灵芝店)", "category": "粤菜/砂锅粥", "tags": ["砂锅粥", "潮汕", "宵夜"], "recommend": "虾蟹砂锅粥、膏蟹粥，鲜美暖胃", "price_range": "50-100", "location_area": "灵芝", "rating": 4.2}, {"name": "鑫华潮汕牛肉店(灵芝店)", "category": "火锅/潮汕牛肉", "tags": ["潮汕牛肉", "火锅", "灵芝"], "recommend": "牛肉丸、吊龙肉、牛骨汤底，灵芝街坊火锅", "price_range": "60-120", "location_area": "灵芝", "rating": 4.1}, {"name": "福永海鲜市场海鲜加工", "category": "粤菜/海鲜", "tags": ["海鲜市场", "现捞现做", "大排档"], "recommend": "自选海鲜加工，清蒸石斑鱼、椒盐皮皮虾", "price_range": "100-300", "location_area": "福永", "rating": 4.2}, {"name": "沙井蚝皇(福永店)", "category": "粤菜/海鲜", "tags": ["生蚝", "沙井蚝", "海鲜"], "recommend": "蒜蓉烤生蚝、蚝仔烙、姜葱炒生蚝", "price_range": "60-120", "location_area": "福永", "rating": 4.3}, {"name": "凤凰山素菜馆", "category": "素食", "tags": ["素食", "寺庙素食", "健康"], "recommend": "素烧鹅、罗汉斋、素包子，凤凰山脚下素菜馆", "price_range": "30-60", "location_area": "福永-凤凰山", "rating": 4.1}, {"name": "福永牛杂店(老字号)", "category": "粤菜/牛杂", "tags": ["牛杂", "街坊", "老字号"], "recommend": "萝卜牛杂、牛腩煲，福永老街坊最爱", "price_range": "15-35", "location_area": "福永", "rating": 4.0}, {"name": "文和友龙虾(福永店)", "category": "湘菜/小龙虾", "tags": ["小龙虾", "长沙", "网红"], "recommend": "招牌口味虾、蒜蓉小龙虾、长沙臭豆腐", "price_range": "80-150", "location_area": "福永", "rating": 4.2}, {"name": "老碗面(福永店)", "category": "西北菜/面食", "tags": ["陕西面", "凉皮", "肉夹馍"], "recommend": "油泼面、肉夹馍、凉皮，西北面食地道", "price_range": "15-35", "location_area": "福永", "rating": 4.0}, {"name": "沙井蚝馆", "category": "粤菜/海鲜", "tags": ["沙井蚝", "生蚝", "深圳名产"], "recommend": "炭烧生蚝、蚝仔烙、金蚝腊味饭，沙井最出名的蚝宴", "price_range": "60-120", "location_area": "沙井", "rating": 4.3}, {"name": "蚝门九式(沙井店)", "category": "粤菜/海鲜", "tags": ["生蚝", "创意蚝菜", "精致"], "recommend": "冰镇生蚝、芝士焗生蚝、蚝仔煎", "price_range": "80-180", "location_area": "沙井", "rating": 4.2}, {"name": "金蚝小镇农家菜", "category": "粤菜/农家菜", "tags": ["农家菜", "本地食材", "地道"], "recommend": "沙井蚝宴、农家走地鸡、客家酿豆腐", "price_range": "60-120", "location_area": "沙井", "rating": 4.1}, {"name": "湛江鸡饭店(沙井店)", "category": "粤菜/湛江菜", "tags": ["白切鸡", "湛江", "鸡饭"], "recommend": "白切湛江鸡、沙姜鸡油饭", "price_range": "40-80", "location_area": "沙井", "rating": 4.0}, {"name": "沙井烧烤一条街-阿强烧烤", "category": "烧烤", "tags": ["烧烤", "宵夜", "街坊"], "recommend": "烤生蚝、鸡翅、茄子，沙井夜宵首选", "price_range": "40-80", "location_area": "沙井", "rating": 4.0}, {"name": "石岩湖农家菜馆", "category": "粤菜/农家菜", "tags": ["农家菜", "湖畔", "周末聚餐"], "recommend": "清蒸山水豆腐、水库鱼、白切鸡", "price_range": "50-100", "location_area": "石岩", "rating": 4.1}, {"name": "石岩乳鸽王", "category": "粤菜", "tags": ["乳鸽", "烧烤", "石岩名菜"], "recommend": "红烧乳鸽、盐焗乳鸽，石岩最有名的乳鸽店", "price_range": "30-60", "location_area": "石岩", "rating": 4.2}, {"name": "客家情(石岩店)", "category": "客家菜", "tags": ["客家菜", "酿豆腐", "土菜"], "recommend": "客家酿豆腐、盐焗鸡、梅菜扣肉", "price_range": "40-80", "location_area": "石岩", "rating": 4.0}, {"name": "潮香四海(宝安店)", "category": "粤菜/潮汕菜", "tags": ["潮汕菜", "打冷", "宵夜"], "recommend": "潮汕打冷、卤水拼盘、海鲜粥", "price_range": "60-120", "location_area": "宝安区", "rating": 4.3}, {"name": "春满园(宝安店)", "category": "粤菜/茶楼", "tags": ["粤菜", "早茶", "宴会"], "recommend": "虾饺、烧鹅、乳猪，宝安知名粤菜酒楼", "price_range": "100-200", "location_area": "宝安区", "rating": 4.3}, {"name": "金悦轩(宝安店)", "category": "粤菜/海鲜", "tags": ["高端粤菜", "海鲜", "商务"], "recommend": "鲍汁扣鹅掌、清蒸东星斑、龙虾伊面", "price_range": "200-500", "location_area": "宝安区", "rating": 4.5}, {"name": "顺德公(宝安店)", "category": "粤菜/顺德菜", "tags": ["顺德菜", "鱼生", "美食之都"], "recommend": "顺德鱼生、煎酿三宝、大良炒牛奶", "price_range": "80-150", "location_area": "宝安区", "rating": 4.3}, {"name": "炳胜品味(宝安店)", "category": "粤菜", "tags": ["粤菜", "高端", "炳胜"], "recommend": "白切鸡、水晶虾饺、菠萝包，广州老字号粤菜", "price_range": "150-300", "location_area": "宝安区", "rating": 4.4}, {"name": "粤菜王府(宝安店)", "category": "粤菜", "tags": ["高端粤菜", "宴会", "环境好"], "recommend": "红烧大鲍翅、清蒸苏眉、金牌烧鹅", "price_range": "200-500", "location_area": "宝安区", "rating": 4.5}, {"name": "老船长海鲜(宝安店)", "category": "粤菜/海鲜", "tags": ["海鲜大餐", "聚餐", "性价比"], "recommend": "蒜蓉蒸生蚝、白灼虾、姜葱炒蟹", "price_range": "80-150", "location_area": "宝安区", "rating": 4.1}, {"name": "蛙来哒(宝安店)", "category": "湘菜/牛蛙", "tags": ["牛蛙", "湘式", "网红"], "recommend": "紫苏味牛蛙平锅、双椒味牛蛙，蛙肉鲜嫩", "price_range": "70-120", "location_area": "宝安区", "rating": 4.2}, {"name": "老佛爷炭火蛙锅(宝安店)", "category": "湘菜/牛蛙", "tags": ["炭火蛙锅", "牛蛙", "网红"], "recommend": "双层炭火蛙锅、馋嘴蛙，牛蛙堆成山", "price_range": "80-140", "location_area": "宝安区", "rating": 4.1}, {"name": "蜀大侠火锅(宝安店)", "category": "火锅/四川火锅", "tags": ["四川火锅", "武侠风", "麻辣"], "recommend": "花千骨、冰川鹅肠、水牛毛肚", "price_range": "100-160", "location_area": "宝安区", "rating": 4.2}, {"name": "小龙坎火锅(宝安店)", "category": "火锅/四川火锅", "tags": ["四川火锅", "连锁", "麻辣"], "recommend": "冰球鹅肠、极品毛肚、霸王牛肉", "price_range": "100-160", "location_area": "宝安区", "rating": 4.2}, {"name": "大龙燚火锅(宝安店)", "category": "火锅/四川火锅", "tags": ["四川火锅", "麻辣", "明星光顾"], "recommend": "麻辣牛肉、极品鸭肠、鲜猪黄喉", "price_range": "100-160", "location_area": "宝安区", "rating": 4.3}, {"name": "谭鸭血老火锅(宝安店)", "category": "火锅/四川火锅", "tags": ["鸭血火锅", "成都", "麻辣"], "recommend": "谭公鸭血、卤牛杂、老妈蹄花", "price_range": "90-150", "location_area": "宝安区", "rating": 4.2}, {"name": "陈记顺和牛肉火锅(宝安店)", "category": "火锅/潮汕牛肉", "tags": ["潮汕牛肉火锅", "鲜切", "连锁"], "recommend": "嫩肉、吊龙、牛筋丸，潮汕牛肉火锅连锁", "price_range": "80-130", "location_area": "宝安区", "rating": 4.3}, {"name": "海银海记潮汕牛肉火锅(宝安店)", "category": "火锅/潮汕牛肉", "tags": ["潮汕牛肉火锅", "鲜切牛肉", "连锁"], "recommend": "雪花牛肉、胸口捞、生牛肉丸", "price_range": "80-130", "location_area": "宝安区", "rating": 4.2}, {"name": "四季椰林椰子鸡(宝安店)", "category": "火锅/椰子鸡", "tags": ["椰子鸡", "海南", "清淡"], "recommend": "原味椰子鸡、竹笙椰子鸡、腊味煲仔饭", "price_range": "90-150", "location_area": "宝安区", "rating": 4.3}, {"name": "同仁四季椰子鸡(宝安店)", "category": "火锅/椰子鸡", "tags": ["椰子鸡", "音乐餐厅", "深圳品牌"], "recommend": "竹笙椰子鸡、煲仔饭，还有现场驻唱", "price_range": "100-150", "location_area": "宝安区", "rating": 4.3}, {"name": "元气寿司(宝安店)", "category": "日料/寿司", "tags": ["回转寿司", "日料", "连锁"], "recommend": "三文鱼刺身、鳗鱼寿司、蟹棒寿司", "price_range": "60-120", "location_area": "宝安区", "rating": 4.1}, {"name": "禾绿回转寿司(宝安店)", "category": "日料/寿司", "tags": ["回转寿司", "绿色", "连锁"], "recommend": "三文鱼、甜虾寿司、加州卷", "price_range": "60-120", "location_area": "宝安区", "rating": 4.0}, {"name": "大渔铁板烧(宝安店)", "category": "日料/铁板烧", "tags": ["铁板烧", "自助", "日式"], "recommend": "法式鹅肝、菲力牛排、蒜蓉大虾，日式铁板自助", "price_range": "150-250", "location_area": "宝安区", "rating": 4.3}, {"name": "汉阳馆烤肉(宝安店)", "category": "韩式烤肉", "tags": ["韩国烤肉", "韩定食", "连锁"], "recommend": "调味牛排、五花肉、石锅拌饭", "price_range": "100-180", "location_area": "宝安区", "rating": 4.2}, {"name": "新麻蒲烤肉(宝安店)", "category": "韩式烤肉", "tags": ["韩国烤肉", "连锁", "韩式"], "recommend": "猪皮、五花肉、护心肉，韩式烤肉连锁", "price_range": "80-150", "location_area": "宝安区", "rating": 4.1}, {"name": "萨莉亚(宝安店)", "category": "西餐/意式", "tags": ["意式简餐", "性价比", "学生"], "recommend": "肉酱意面、奶油蘑菇汤、烤鸡翅，人均30吃西餐", "price_range": "20-40", "location_area": "宝安区", "rating": 4.0}, {"name": "必胜客(宝安店)", "category": "西餐/披萨", "tags": ["披萨", "意面", "连锁"], "recommend": "超级至尊披萨、烤鸡翅、海鲜意面", "price_range": "60-120", "location_area": "宝安区", "rating": 4.0}, {"name": "肯德基(宝安店)", "category": "西式快餐", "tags": ["炸鸡", "汉堡", "连锁"], "recommend": "香辣鸡腿堡、葡式蛋挞、奥尔良烤翅", "price_range": "20-50", "location_area": "宝安区", "rating": 3.9}, {"name": "麦当劳(宝安店)", "category": "西式快餐", "tags": ["汉堡", "薯条", "连锁"], "recommend": "巨无霸、麦辣鸡腿堡、薯条", "price_range": "20-50", "location_area": "宝安区", "rating": 3.9}, {"name": "69区螺蛳粉(宝安总店)", "category": "小吃/螺蛳粉", "tags": ["螺蛳粉", "柳州", "网红"], "recommend": "招牌螺蛳粉、卤蛋螺蛳粉、猪脚螺蛳粉", "price_range": "12-28", "location_area": "宝安区", "rating": 4.2}, {"name": "周黑鸭(宝安店)", "category": "小吃/卤味", "tags": ["卤味", "鸭脖", "连锁"], "recommend": "鸭脖、鸭锁骨、卤藕片", "price_range": "15-40", "location_area": "宝安区", "rating": 3.9}, {"name": "绝味鸭脖(宝安店)", "category": "小吃/卤味", "tags": ["卤味", "鸭脖", "连锁"], "recommend": "招牌鸭脖、毛豆、藕片", "price_range": "10-30", "location_area": "宝安区", "rating": 3.9}, {"name": "正新鸡排(宝安店)", "category": "小吃/炸鸡", "tags": ["鸡排", "炸鸡", "连锁"], "recommend": "招牌鸡排、烤鱿鱼、炸串", "price_range": "10-25", "location_area": "宝安区", "rating": 3.8}, {"name": "喜姐炸串(宝安店)", "category": "小吃/炸串", "tags": ["炸串", "网红", "街边"], "recommend": "秘制里脊、炸年糕、炸杏鲍菇", "price_range": "15-35", "location_area": "宝安区", "rating": 4.0}, {"name": "南城湘菜馆(宝安店)", "category": "湘菜", "tags": ["湘菜", "湖南菜", "下饭"], "recommend": "剁椒鱼头、小炒黄牛肉、擂辣椒皮蛋", "price_range": "40-80", "location_area": "宝安区", "rating": 4.0}, {"name": "湘阁里辣(宝安店)", "category": "湘菜", "tags": ["湘菜", "连锁", "下饭"], "recommend": "辣椒炒肉、剁椒鱼头、芋头蒸排骨", "price_range": "50-90", "location_area": "宝安区", "rating": 4.1}, {"name": "俏九州湘菜(宝安店)", "category": "湘菜", "tags": ["湘菜", "湖南土菜", "连锁"], "recommend": "土鸡煲、红烧肉、干锅肥肠", "price_range": "50-90", "location_area": "宝安区", "rating": 4.1}, {"name": "川味观(宝安店)", "category": "川菜", "tags": ["川菜", "麻辣", "水煮鱼"], "recommend": "水煮鱼、毛血旺、辣子鸡，正宗川味", "price_range": "50-100", "location_area": "宝安区", "rating": 4.0}, {"name": "渝味小厨(宝安店)", "category": "川菜/重庆菜", "tags": ["重庆菜", "小面", "江湖菜"], "recommend": "重庆小面、辣子鸡、江湖烤鱼", "price_range": "30-70", "location_area": "宝安区", "rating": 4.0}, {"name": "鱼你在一起(宝安店)", "category": "川菜/酸菜鱼", "tags": ["酸菜鱼", "快餐", "一人食"], "recommend": "青花椒酸菜鱼、番茄鱼、单人份酸菜鱼", "price_range": "30-60", "location_area": "宝安区", "rating": 4.1}, {"name": "姚姚酸菜鱼(宝安店)", "category": "川菜/酸菜鱼", "tags": ["酸菜鱼", "鲈鱼", "网红"], "recommend": "招牌酸菜鲈鱼、番茄鱼、口水鸡", "price_range": "70-120", "location_area": "宝安区", "rating": 4.2}, {"name": "鱼鲜生(宝安店)", "category": "粤菜/海鲜", "tags": ["海鲜自助", "刺身", "放题"], "recommend": "海胆刺身、三文鱼、龙虾，海鲜放题畅吃", "price_range": "200-400", "location_area": "宝安区", "rating": 4.4}, {"name": "极上万膳(宝安店)", "category": "日料/自助", "tags": ["日料放题", "刺身", "自助"], "recommend": "牡丹虾、海胆、金枪鱼大腩，高端日料放题", "price_range": "300-500", "location_area": "宝安区", "rating": 4.5}, {"name": "品鹭港式茶餐厅(宝安店)", "category": "茶餐厅", "tags": ["港式茶餐厅", "冰室", "连锁"], "recommend": "咖喱牛腩饭、冻柠茶、菠萝油", "price_range": "40-70", "location_area": "宝安区", "rating": 4.1}, {"name": "港嘢香港茶餐厅(宝安店)", "category": "茶餐厅", "tags": ["港式茶餐厅", "性价比", "网红"], "recommend": "黯然销魂饭、芝士焗饭、港式奶茶", "price_range": "40-70", "location_area": "宝安区", "rating": 4.2}, {"name": "翠华餐厅(宝安店)", "category": "茶餐厅", "tags": ["港式茶餐厅", "老字号", "香港品牌"], "recommend": "猪扒包、咖喱牛腩、奶油猪仔包", "price_range": "50-90", "location_area": "宝安区", "rating": 4.2}, {"name": "太兴餐厅(宝安店)", "category": "茶餐厅", "tags": ["港式茶餐厅", "烧味", "连锁"], "recommend": "冰镇奶茶、烧味拼盘、菠萝包", "price_range": "50-90", "location_area": "宝安区", "rating": 4.1}, {"name": "敏华冰厅(宝安店)", "category": "茶餐厅", "tags": ["港式冰厅", "网红", "排队"], "recommend": "敏华黯然销魂饭、Big Men菠萝包", "price_range": "40-70", "location_area": "宝安区", "rating": 4.3}, {"name": "% Arabica(宝安店)", "category": "咖啡", "tags": ["精品咖啡", "%", "日式"], "recommend": "西班牙拿铁、抹茶拿铁，极简风格咖啡", "price_range": "35-50", "location_area": "宝安区", "rating": 4.3}, {"name": "瑞幸咖啡(宝安店)", "category": "咖啡", "tags": ["咖啡", "连锁", "性价比"], "recommend": "生椰拿铁、厚乳拿铁、耶加雪啡", "price_range": "15-30", "location_area": "宝安区", "rating": 3.9}, {"name": "库迪咖啡(宝安店)", "category": "咖啡", "tags": ["咖啡", "性价比", "连锁"], "recommend": "潘帕斯蓝生酪拿铁、星辰厚乳拿铁", "price_range": "10-25", "location_area": "宝安区", "rating": 3.8}, {"name": "蜜雪冰城(宝安店)", "category": "茶饮", "tags": ["奶茶", "性价比", "连锁"], "recommend": "柠檬水、冰淇淋、珍珠奶茶，人均不到10元", "price_range": "5-15", "location_area": "宝安区", "rating": 3.8}, {"name": "一点点(宝安店)", "category": "茶饮", "tags": ["奶茶", "连锁", "台湾"], "recommend": "波霸奶茶、四季春茶、冰淇淋红茶", "price_range": "10-20", "location_area": "宝安区", "rating": 3.9}, {"name": "霸王茶姬(宝安店)", "category": "茶饮", "tags": ["新中式茶饮", "国风", "网红"], "recommend": "伯牙绝弦、春日桃桃、花田乌龙", "price_range": "18-30", "location_area": "宝安区", "rating": 4.2}, {"name": "茶颜悦色(宝安店)", "category": "茶饮", "tags": ["奶茶", "长沙", "国风"], "recommend": "声声乌龙、幽兰拿铁、人间烟火", "price_range": "15-25", "location_area": "宝安区", "rating": 4.3}, {"name": "沪上阿姨(宝安店)", "category": "茶饮", "tags": ["奶茶", "酸奶", "连锁"], "recommend": "血糯米奶茶、杨枝甘露、酸奶系列", "price_range": "10-20", "location_area": "宝安区", "rating": 3.9}, {"name": "古茗(宝安店)", "category": "茶饮", "tags": ["奶茶", "果茶", "连锁"], "recommend": "超A芝士葡萄、布丁芋泥奶茶", "price_range": "12-22", "location_area": "宝安区", "rating": 4.0}, {"name": "书亦烧仙草(宝安店)", "category": "茶饮", "tags": ["烧仙草", "奶茶", "连锁"], "recommend": "书亦烧仙草、葡萄芋圆冻冻", "price_range": "10-20", "location_area": "宝安区", "rating": 3.9}, {"name": "满记甜品(宝安店)", "category": "甜品/糖水", "tags": ["港式甜品", "糖水", "连锁"], "recommend": "杨枝甘露、芒果班戟、白雪黑珍珠", "price_range": "25-50", "location_area": "宝安区", "rating": 4.1}, {"name": "鲜芋仙(宝安店)", "category": "甜品", "tags": ["芋圆", "台式甜品", "连锁"], "recommend": "招牌芋圆、仙草冻、红豆薏仁汤", "price_range": "20-40", "location_area": "宝安区", "rating": 4.0}, {"name": "五条人糖水铺(宝安店)", "category": "甜品/糖水", "tags": ["广式糖水", "网红", "平价"], "recommend": "杨枝甘露、双皮奶、椰汁西米露", "price_range": "10-25", "location_area": "宝安区", "rating": 4.1}, {"name": "牛百鲜牛杂煲(宝安店)", "category": "粤菜/牛杂", "tags": ["牛杂煲", "广式", "煲仔"], "recommend": "招牌牛杂煲、牛腩煲，入味软烂", "price_range": "50-100", "location_area": "宝安区", "rating": 4.2}, {"name": "光头佬牛杂(宝安店)", "category": "粤菜/牛杂", "tags": ["牛杂", "街坊", "老字号"], "recommend": "萝卜牛杂、牛杂煲，宝安老字号牛杂", "price_range": "15-35", "location_area": "宝安区", "rating": 4.1}, {"name": "九记肠粉皇(宝安店)", "category": "粤菜/肠粉", "tags": ["肠粉", "早餐", "网红"], "recommend": "招牌鲜虾肠粉、蛋肉肠粉", "price_range": "8-20", "location_area": "宝安区", "rating": 4.0}, {"name": "大有利茶餐厅(宝安店)", "category": "茶餐厅", "tags": ["茶餐厅", "港式", "老字号"], "recommend": "菠萝油、热奶茶、叉烧饭", "price_range": "40-70", "location_area": "宝安区", "rating": 4.1}, {"name": "表哥茶餐厅(宝安店)", "category": "茶餐厅", "tags": ["茶餐厅", "港式", "香港品牌"], "recommend": "干炒牛河、咖喱鸡扒饭、西多士", "price_range": "40-70", "location_area": "宝安区", "rating": 4.1}, {"name": "老广州云吞面(宝安店)", "category": "粤菜/粉面", "tags": ["云吞面", "竹升面", "老字号"], "recommend": "鲜虾云吞面、牛腩捞面", "price_range": "12-28", "location_area": "宝安区", "rating": 4.0}, {"name": "阿婆牛杂(宝安店)", "category": "粤菜/牛杂", "tags": ["牛杂", "广州老字号", "街坊"], "recommend": "萝卜牛杂、面筋牛杂", "price_range": "10-25", "location_area": "宝安区", "rating": 4.0}, {"name": "银记肠粉(宝安店)", "category": "粤菜/肠粉", "tags": ["肠粉", "广州老字号", "布拉肠"], "recommend": "鲜虾肠粉、牛肉肠粉、韭黄虾肠", "price_range": "10-25", "location_area": "宝安区", "rating": 4.1}, {"name": "广州酒家(宝安店)", "category": "粤菜/茶楼", "tags": ["粤菜", "老字号", "早茶"], "recommend": "文昌鸡、红烧乳鸽、虾饺，广州饮食集团", "price_range": "100-200", "location_area": "宝安区", "rating": 4.2}, {"name": "顺德松记(宝安店)", "category": "粤菜/顺德菜", "tags": ["顺德菜", "清水打边炉", "鲜"], "recommend": "清水打边炉、鱼皮饺、炸牛奶", "price_range": "80-160", "location_area": "宝安区", "rating": 4.3}, {"name": "鸡煲之家(宝安店)", "category": "粤菜/鸡煲", "tags": ["鸡煲", "广东", "火锅"], "recommend": "招牌鸡煲、鲍鱼鸡煲、田螺鸡煲", "price_range": "60-120", "location_area": "宝安区", "rating": 4.1}, {"name": "胡须佬鸡煲(宝安店)", "category": "粤菜/鸡煲", "tags": ["鸡煲", "深圳名店", "排队"], "recommend": "招牌胡须佬鸡煲、海鲜鸡煲", "price_range": "70-130", "location_area": "宝安区", "rating": 4.3}, {"name": "椰子鸡兄弟(宝安店)", "category": "火锅/椰子鸡", "tags": ["椰子鸡", "海南", "清淡"], "recommend": "竹笙椰子鸡、珍珠马蹄椰子鸡", "price_range": "80-140", "location_area": "宝安区", "rating": 4.1}, {"name": "探炉烤鱼(宝安店)", "category": "川菜/烤鱼", "tags": ["烤鱼", "麻辣", "连锁"], "recommend": "香辣烤鱼、蒜香烤鱼、清江鱼", "price_range": "60-110", "location_area": "宝安区", "rating": 4.1}, {"name": "鱼当道(宝安店)", "category": "川菜/烤鱼", "tags": ["烤鱼", "川菜", "实惠"], "recommend": "香辣烤鱼、泡椒烤鱼、豆花烤鱼", "price_range": "50-90", "location_area": "宝安区", "rating": 4.0}, {"name": "半仙豆夫(宝安店)", "category": "茶饮/豆乳", "tags": ["豆乳", "网红", "健康"], "recommend": "白玉厚制浆撞茶、豆乳冰淇淋", "price_range": "15-28", "location_area": "宝安区", "rating": 4.0}, {"name": "台盖(宝安店)", "category": "茶饮", "tags": ["奶茶", "果茶", "深圳品牌"], "recommend": "满满草莓、金芋满堂、黑糖珍珠", "price_range": "18-30", "location_area": "宝安区", "rating": 4.0}, {"name": "野萃山(宝安店)", "category": "茶饮/果汁", "tags": ["果汁", "现榨", "健康"], "recommend": "野萃山招牌特饮、鲜榨橙汁、牛油果奶昔", "price_range": "25-45", "location_area": "宝安区", "rating": 4.1}, {"name": "遇见小面(宝安店)", "category": "川菜/小面", "tags": ["重庆小面", "豌豆面", "连锁"], "recommend": "招牌豌豆面、红碗豌杂面、卤猪蹄", "price_range": "20-40", "location_area": "宝安区", "rating": 4.1}, {"name": "嗦面舍(宝安店)", "category": "西北菜/面食", "tags": ["面馆", "手工面", "创意"], "recommend": "葱油拌面、油泼面、番茄鸡蛋面", "price_range": "15-35", "location_area": "宝安区", "rating": 4.0}, {"name": "马记永兰州拉面(宝安店)", "category": "西北菜/面食", "tags": ["兰州拉面", "牛肉面", "连锁"], "recommend": "兰州牛肉面、羊肉串、手抓羊肉", "price_range": "20-45", "location_area": "宝安区", "rating": 4.1}, {"name": "张拉拉兰州牛肉面(宝安店)", "category": "西北菜/面食", "tags": ["拉面", "兰州", "连锁"], "recommend": "兰州牛肉面、烤串、酿皮", "price_range": "20-45", "location_area": "宝安区", "rating": 4.0}, {"name": "陈香贵兰州牛肉面(宝安店)", "category": "西北菜/面食", "tags": ["牛肉面", "兰州", "连锁"], "recommend": "兰州牛肉面、鸡蛋醪糟、新疆烤包子", "price_range": "20-45", "location_area": "宝安区", "rating": 4.1}, {"name": "争鲜寿司(宝安店)", "category": "日料/寿司", "tags": ["回转寿司", "平价", "连锁"], "recommend": "三文鱼寿司、蟹肉棒寿司、玉子寿司", "price_range": "30-60", "location_area": "宝安区", "rating": 4.0}, {"name": "仓桥家日料(宝安店)", "category": "日料", "tags": ["日式料理", "和风", "寿司"], "recommend": "三文鱼刺身、牛肉寿喜锅、天妇罗", "price_range": "80-150", "location_area": "宝安区", "rating": 4.2}, {"name": "御前十七(宝安店)", "category": "日料", "tags": ["日式料理", "网红", "创意"], "recommend": "火焰寿司拼盘、芝士焗大虾、牛油果鳗鱼卷", "price_range": "80-160", "location_area": "宝安区", "rating": 4.2}, {"name": "炙景台烧肉(宝安店)", "category": "日料/烧肉", "tags": ["日式烧肉", "和牛", "烤肉"], "recommend": "M9和牛、牛舌、横膈膜，日式烧肉", "price_range": "150-300", "location_area": "宝安区", "rating": 4.3}, {"name": "牛角日本烧肉(宝安店)", "category": "日料/烧肉", "tags": ["日式烧肉", "连锁", "高端"], "recommend": "牛角牛小排、松坂猪、石锅拌饭", "price_range": "150-300", "location_area": "宝安区", "rating": 4.4}, {"name": "温野菜日本涮涮锅(宝安店)", "category": "日料/涮涮锅", "tags": ["日式火锅", "涮涮锅", "放题"], "recommend": "澳洲和牛放题、寿喜锅、日式蘸料", "price_range": "150-250", "location_area": "宝安区", "rating": 4.3}, {"name": "摩打食堂(宝安店)", "category": "日料", "tags": ["日式料理", "创意", "网红"], "recommend": "明太子烤土豆、澳洲顶级铺天盖地牛肉寿司", "price_range": "80-150", "location_area": "宝安区", "rating": 4.4}, {"name": "丼物园(宝安店)", "category": "日料/丼饭", "tags": ["日式丼饭", "烧肉丼", "鳗鱼饭"], "recommend": "招牌烧肉丼、鳗鱼丼、牛舌丼", "price_range": "40-80", "location_area": "宝安区", "rating": 4.1}, {"name": "美奈小馆(宝安店)", "category": "东南亚菜/越南菜", "tags": ["越南菜", "东南亚", "Pho"], "recommend": "火车头越南粉、越南春卷、香茅鸡扒", "price_range": "50-90", "location_area": "宝安区", "rating": 4.1}, {"name": "越小品(宝安店)", "category": "东南亚菜/越南菜", "tags": ["越南菜", "河粉", "东南亚"], "recommend": "越南牛肉粉、越南炸春卷、滴漏咖啡", "price_range": "30-60", "location_area": "宝安区", "rating": 4.0}, {"name": "芒果树泰国餐厅(宝安店)", "category": "东南亚菜/泰国菜", "tags": ["泰国菜", "冬阴功", "咖喱"], "recommend": "冬阴功海鲜汤、咖喱鸡、芒果糯米饭", "price_range": "80-150", "location_area": "宝安区", "rating": 4.2}, {"name": "蕉叶泰国餐厅(宝安店)", "category": "东南亚菜/泰国菜", "tags": ["泰国菜", "咖喱蟹", "老字号"], "recommend": "咖喱皇炒蟹、泰式烤猪颈肉、菠萝饭", "price_range": "100-200", "location_area": "宝安区", "rating": 4.2}, {"name": "泰炯音乐酒馆(宝安店)", "category": "东南亚菜/泰国菜", "tags": ["泰国菜", "音乐餐吧", "氛围"], "recommend": "冬阴功、烤鱼、泰式奶茶，还有现场音乐", "price_range": "80-160", "location_area": "宝安区", "rating": 4.1}, {"name": "松哥油焖大虾(宝安店)", "category": "湘菜/小龙虾", "tags": ["小龙虾", "油焖", "网红"], "recommend": "油焖大虾、蒜蓉大虾、凉面", "price_range": "80-150", "location_area": "宝安区", "rating": 4.2}, {"name": "靓靓蒸虾(宝安店)", "category": "湘菜/小龙虾", "tags": ["小龙虾", "武汉", "蒸虾"], "recommend": "招牌蒸虾、油焖大虾、凉拌毛豆", "price_range": "80-150", "location_area": "宝安区", "rating": 4.2}, {"name": "木屋烧烤(宝安店)", "category": "烧烤", "tags": ["烧烤", "连锁", "宵夜"], "recommend": "烤生蚝、烤鸡翅、烤韭菜，深圳烧烤连锁一哥", "price_range": "50-100", "location_area": "宝安区", "rating": 4.2}, {"name": "冰村大叔(宝安店)", "category": "甜品/糖水", "tags": ["糖水", "冰品", "街坊"], "recommend": "绿豆沙、红豆沙、芝麻糊，宝安街坊糖水", "price_range": "8-18", "location_area": "宝安区", "rating": 4.0}, {"name": "赵记传承糖水(宝安店)", "category": "甜品/糖水", "tags": ["糖水", "广式", "连锁"], "recommend": "姜撞奶、双皮奶、椰汁西米露", "price_range": "10-22", "location_area": "宝安区", "rating": 4.1}, {"name": "黄氏正轩姜撞奶(宝安店)", "category": "甜品/糖水", "tags": ["姜撞奶", "广式", "甜品"], "recommend": "招牌姜撞奶、双皮奶、卤水鸡脚", "price_range": "10-25", "location_area": "宝安区", "rating": 4.0}, {"name": "太平洋咖啡(宝安店)", "category": "咖啡", "tags": ["咖啡", "连锁", "商务"], "recommend": "拿铁、美式、摩卡", "price_range": "25-40", "location_area": "宝安区", "rating": 3.9}, {"name": "Tim Hortons(宝安店)", "category": "咖啡", "tags": ["咖啡", "加拿大", "连锁"], "recommend": "double-double咖啡、天乐雪、甜甜圈", "price_range": "20-40", "location_area": "宝安区", "rating": 4.0}, {"name": "Peet's Coffee(宝安店)", "category": "咖啡", "tags": ["精品咖啡", "美式", "连锁"], "recommend": "拿铁、冷萃咖啡、澳白", "price_range": "30-50", "location_area": "宝安区", "rating": 4.1}, {"name": "一乐拉面(宝安店)", "category": "日料/拉面", "tags": ["日式拉面", "火影", "网红"], "recommend": "豚骨拉面、味增拉面、叉烧拉面", "price_range": "35-60", "location_area": "宝安区", "rating": 4.0}, {"name": "麺屋武藏(宝安店)", "category": "日料/拉面", "tags": ["日式拉面", "东京", "连锁"], "recommend": "武藏拉面、黑蒜拉面、沾面", "price_range": "40-70", "location_area": "宝安区", "rating": 4.1}, {"name": "义泰昌(宝安店)", "category": "粤菜/快餐", "tags": ["快餐", "中餐", "连锁"], "recommend": "蒜香排骨饭、红烧肉饭、蒸鱼饭", "price_range": "25-45", "location_area": "宝安区", "rating": 4.0}, {"name": "72街(宝安店)", "category": "粤菜/快餐", "tags": ["中式快餐", "连锁", "性价比"], "recommend": "招牌排骨饭、卤肉饭、酸菜鱼饭", "price_range": "20-40", "location_area": "宝安区", "rating": 3.9}, {"name": "真功夫(宝安店)", "category": "粤菜/快餐", "tags": ["中式快餐", "蒸菜", "连锁"], "recommend": "香汁排骨饭、冬菇鸡腿肉饭", "price_range": "25-45", "location_area": "宝安区", "rating": 3.9}, {"name": "嘉旺(宝安店)", "category": "粤菜/快餐", "tags": ["港式快餐", "连锁", "烧味"], "recommend": "蜜汁叉烧饭、烧鹅饭、咖喱牛腩饭", "price_range": "25-45", "location_area": "宝安区", "rating": 3.9}, {"name": "大家乐(宝安店)", "category": "粤菜/快餐", "tags": ["港式快餐", "连锁", "西式"], "recommend": "一哥焗猪扒饭、咖喱牛腩饭、烧味拼盘", "price_range": "30-55", "location_area": "宝安区", "rating": 4.0}, {"name": "大快活(宝安店)", "category": "粤菜/快餐", "tags": ["港式快餐", "连锁", "性价比"], "recommend": "咖喱鸡饭、粟米肉粒饭、西多士", "price_range": "25-50", "location_area": "宝安区", "rating": 3.9}, {"name": "常平竹升面(宝安店)", "category": "粤菜/粉面", "tags": ["竹升面", "云吞面", "东莞"], "recommend": "鲜虾云吞面、牛腩面、炸酱面", "price_range": "12-28", "location_area": "宝安区", "rating": 4.0}, {"name": "海师傅砂锅粥(宝安店)", "category": "粤菜/砂锅粥", "tags": ["砂锅粥", "宵夜", "潮汕"], "recommend": "虾蟹粥、膏蟹粥、烧鹅", "price_range": "40-90", "location_area": "宝安区", "rating": 4.1}, {"name": "金稻园砂锅粥(宝安店)", "category": "粤菜/砂锅粥", "tags": ["砂锅粥", "连锁", "深圳名店"], "recommend": "虾蟹砂锅粥、烤生蚝、水晶鸡", "price_range": "50-100", "location_area": "宝安区", "rating": 4.2}, {"name": "幸福侯彩擂(宝安店)", "category": "茶饮", "tags": ["奶茶", "台湾", "连锁"], "recommend": "黑糖珍珠奶茶、水果茶", "price_range": "15-28", "location_area": "宝安区", "rating": 3.9}, {"name": "Coco都可(宝安店)", "category": "茶饮", "tags": ["奶茶", "连锁", "台湾"], "recommend": "百香果双响炮、奶茶三兄弟", "price_range": "10-20", "location_area": "宝安区", "rating": 3.9}, {"name": "阿嬷手作(宝安店)", "category": "茶饮", "tags": ["手作奶茶", "广西", "网红"], "recommend": "水牛乳茶、黑糖珍珠、芒果河粉", "price_range": "18-30", "location_area": "宝安区", "rating": 4.3}, {"name": "LINLEE柠檬茶(宝安店)", "category": "茶饮", "tags": ["柠檬茶", "手打", "网红"], "recommend": "招牌手打柠檬茶、鸭屎香柠檬茶", "price_range": "12-22", "location_area": "宝安区", "rating": 4.2}, {"name": "邻里的柠檬茶(宝安店)", "category": "茶饮", "tags": ["柠檬茶", "手打", "网红"], "recommend": "招牌柠檬茶、咸柠七、柠乐", "price_range": "12-22", "location_area": "宝安区", "rating": 4.1}, {"name": "王柠·柠檬茶(宝安店)", "category": "茶饮", "tags": ["柠檬茶", "手打", "网红"], "recommend": "石里香柠檬茶、招牌柠檬茶", "price_range": "12-22", "location_area": "宝安区", "rating": 4.1}, {"name": "挞柠·手打柠檬茶(宝安店)", "category": "茶饮", "tags": ["柠檬茶", "手打", "网红"], "recommend": "招牌柠檬茶、黄皮柠檬茶", "price_range": "12-22", "location_area": "宝安区", "rating": 4.0}, {"name": "麦芽先生糖水(宝安店)", "category": "甜品/糖水", "tags": ["糖水", "广式", "街坊"], "recommend": "绿豆沙、马蹄爽、甘蔗水", "price_range": "8-18", "location_area": "宝安区", "rating": 4.0}, {"name": "百花甜品(宝安店)", "category": "甜品/糖水", "tags": ["糖水", "广州老字号", "传统"], "recommend": "凤凰奶糊、芝麻糊、杏仁糊", "price_range": "10-22", "location_area": "宝安区", "rating": 4.1}, {"name": "顺德双皮奶(宝安店)", "category": "甜品/糖水", "tags": ["双皮奶", "顺德", "传统甜品"], "recommend": "原味双皮奶、红豆双皮奶、姜撞奶", "price_range": "10-22", "location_area": "宝安区", "rating": 4.1}, {"name": "澳门葡挞(宝安店)", "category": "甜品/烘焙", "tags": ["葡挞", "澳门", "烘焙"], "recommend": "招牌葡挞、芝士挞、蛋挞", "price_range": "8-18", "location_area": "宝安区", "rating": 4.0}, {"name": "鲍师傅糕点(宝安店)", "category": "甜品/烘焙", "tags": ["肉松小贝", "糕点", "网红"], "recommend": "海苔肉松小贝、蟹黄肉松小贝、蛋挞", "price_range": "15-40", "location_area": "宝安区", "rating": 4.3}, {"name": "泸溪河桃酥(宝安店)", "category": "甜品/烘焙", "tags": ["桃酥", "糕点", "中式"], "recommend": "原味桃酥、绿豆糕、枣泥糕", "price_range": "10-30", "location_area": "宝安区", "rating": 4.2}, {"name": "墨茉点心局(宝安店)", "category": "甜品/烘焙", "tags": ["中点", "长沙", "网红"], "recommend": "麻薯、芝士脆、芋泥饼", "price_range": "15-40", "location_area": "宝安区", "rating": 4.1}, {"name": "虎头局渣打饼行(宝安店)", "category": "甜品/烘焙", "tags": ["中点", "网红", "长沙"], "recommend": "麻薯老虎卷、拉丝麻薯盘挞", "price_range": "15-40", "location_area": "宝安区", "rating": 4.1}, {"name": "糖纸(宝安店)", "category": "甜品", "tags": ["甜品", "千层", "连锁"], "recommend": "芒果千层、榴莲千层、提拉米苏", "price_range": "25-50", "location_area": "宝安区", "rating": 4.1}, {"name": "西树泡芙(宝安店)", "category": "甜品/烘焙", "tags": ["泡芙", "甜品", "连锁"], "recommend": "抹茶泡芙、香草泡芙、冰淇淋泡芙", "price_range": "15-25", "location_area": "宝安区", "rating": 4.0}, {"name": "麦当劳甜品站(宝安店)", "category": "甜品/冰淇淋", "tags": ["冰淇淋", "甜品", "快餐"], "recommend": "麦旋风、新地、甜筒", "price_range": "5-15", "location_area": "宝安区", "rating": 3.8}, {"name": "汕头老字号牛肉店(宝安店)", "category": "火锅/潮汕牛肉", "tags": ["潮汕牛肉", "鲜切", "老字号"], "recommend": "牛肉火锅、牛肉丸、牛杂", "price_range": "60-120", "location_area": "宝安区", "rating": 4.2}, {"name": "潮味馆(宝安店)", "category": "粤菜/潮汕菜", "tags": ["潮汕菜", "打冷", "夜粥"], "recommend": "潮汕打冷、卤水拼盘、白粥小菜", "price_range": "30-70", "location_area": "宝安区", "rating": 4.1}, {"name": "老潮记(宝安店)", "category": "粤菜/潮汕菜", "tags": ["潮汕菜", "牛肉丸", "粿条"], "recommend": "牛肉粿条汤、牛杂汤、沙茶酱", "price_range": "15-35", "location_area": "宝安区", "rating": 4.0}, {"name": "普宁肠粉(宝安店)", "category": "粤菜/肠粉", "tags": ["肠粉", "普宁", "潮汕"], "recommend": "普宁肠粉、牛肉肠粉、加蛋肠粉", "price_range": "8-20", "location_area": "宝安区", "rating": 4.0}, {"name": "隆江猪脚饭店(宝安店)", "category": "粤菜/隆江猪脚饭", "tags": ["猪脚饭", "隆江", "快餐"], "recommend": "隆江猪脚饭、卤猪蹄、卤蛋", "price_range": "12-25", "location_area": "宝安区", "rating": 4.0}, {"name": "老上海馄饨(宝安店)", "category": "小吃/馄饨", "tags": ["馄饨", "上海", "早餐"], "recommend": "荠菜馄饨、鲜肉馄饨、炸猪排", "price_range": "12-25", "location_area": "宝安区", "rating": 3.9}, {"name": "沙县小吃(宝安店)", "category": "小吃/简餐", "tags": ["小吃", "沙县", "性价比"], "recommend": "蒸饺、扁肉、拌面、炖罐", "price_range": "8-20", "location_area": "宝安区", "rating": 3.7}, {"name": "兰州拉面(宝安店)", "category": "西北菜/面食", "tags": ["拉面", "清真", "性价比"], "recommend": "兰州牛肉面、刀削面、炒拉条", "price_range": "10-25", "location_area": "宝安区", "rating": 3.8}, {"name": "麻辣诱惑(宝安店)", "category": "川菜", "tags": ["麻辣", "川菜", "水煮鱼"], "recommend": "水煮鱼、毛血旺、辣子鸡", "price_range": "50-100", "location_area": "宝安区", "rating": 4.0}, {"name": "重庆小面(宝安店)", "category": "川菜/小面", "tags": ["重庆小面", "麻辣", "面食"], "recommend": "豌杂面、重庆小面、红油抄手", "price_range": "10-22", "location_area": "宝安区", "rating": 3.9}, {"name": "AMINO AMIGO(宝安店)", "category": "西餐/轻食", "tags": ["轻食", "健身餐", "沙拉"], "recommend": "牛油果鸡肉沙拉、全麦三明治、能量碗", "price_range": "40-80", "location_area": "宝安区", "rating": 4.0}, {"name": "gaga鲜语(宝安店)", "category": "西餐/轻食", "tags": ["轻食", "茶饮", "网红"], "recommend": "gaga鲜果茶、牛油果吐司、煎牛肉沙拉", "price_range": "50-100", "location_area": "宝安区", "rating": 4.2}, {"name": "seeheart(宝安店)", "category": "西餐/轻食", "tags": ["轻食", "减脂餐", "沙拉"], "recommend": "鸡胸肉沙拉、荞麦面、果蔬汁", "price_range": "30-60", "location_area": "宝安区", "rating": 4.0}, {"name": "蓝蛙(宝安店)", "category": "西餐/美式", "tags": ["西餐", "汉堡", "酒吧"], "recommend": "招牌牛肉汉堡、烤鸡翅、莫吉托", "price_range": "100-200", "location_area": "宝安区", "rating": 4.1}, {"name": "卡朋西餐(宝安店)", "category": "西餐", "tags": ["西餐", "性价比", "连锁"], "recommend": "牛扒、焗饭、意面，平民西餐价格", "price_range": "40-80", "location_area": "宝安区", "rating": 4.1}, {"name": "拾号牛扒(宝安店)", "category": "西餐/牛扒", "tags": ["牛扒", "西餐", "精致"], "recommend": "果木牛扒、澳洲和牛、黑松露意面", "price_range": "120-250", "location_area": "宝安区", "rating": 4.3}, {"name": "王品牛排(宝安店)", "category": "西餐/牛扒", "tags": ["牛排", "高端", "精致西餐"], "recommend": "台塑牛排、牛小排、餐前包", "price_range": "300-500", "location_area": "宝安区", "rating": 4.4}, {"name": "The Pizza Factory(宝安店)", "category": "西餐/披萨", "tags": ["手工披萨", "意式", "窑烤"], "recommend": "玛格丽特披萨、帕尔马火腿披萨", "price_range": "60-120", "location_area": "宝安区", "rating": 4.1}, {"name": "Speed Pizza(宝安店)", "category": "西餐/披萨", "tags": ["披萨", "手工", "性价比"], "recommend": "榴莲披萨、超级至尊披萨、芝士卷边", "price_range": "40-80", "location_area": "宝安区", "rating": 4.0}, {"name": "焱铁烧(宝安店)", "category": "日料/烧肉", "tags": ["日式烤肉", "和牛", "自助"], "recommend": "澳洲和牛、牛舌、五花肉，烤肉放题", "price_range": "150-250", "location_area": "宝安区", "rating": 4.2}, {"name": "烧肉万两(宝安店)", "category": "日料/烧肉", "tags": ["日式烤肉", "和牛", "连锁"], "recommend": "M9和牛、厚切牛舌、壶渍牛肋条", "price_range": "150-300", "location_area": "宝安区", "rating": 4.3}, {"name": "一绪烤肉(宝安店)", "category": "日料/烧肉", "tags": ["日式烤肉", "放题", "性价比"], "recommend": "烤肉放题、牛五花、猪颈肉", "price_range": "100-180", "location_area": "宝安区", "rating": 4.1}, {"name": "姜虎东白丁烤肉(宝安店)", "category": "韩式烤肉", "tags": ["韩国烤肉", "韩星品牌", "连锁"], "recommend": "雪花肉、五花肉、回忆盒饭", "price_range": "120-200", "location_area": "宝安区", "rating": 4.3}, {"name": "东洞·韩式烤肉(宝安店)", "category": "韩式烤肉", "tags": ["韩国烤肉", "环境好", "韩式"], "recommend": "韩式五花肉、牛肋条、辣炒年糕", "price_range": "100-180", "location_area": "宝安区", "rating": 4.2}, {"name": "本家韩国料理(宝安店)", "category": "韩式料理", "tags": ["韩国料理", "烤肉", "老字号"], "recommend": "老白吾桑格、调味牛排、大酱汤", "price_range": "100-200", "location_area": "宝安区", "rating": 4.2}, {"name": "豆腐家(宝安店)", "category": "韩式料理", "tags": ["韩式嫩豆腐", "汤", "拌饭"], "recommend": "嫩豆腐汤、石锅拌饭、韩式炸鸡", "price_range": "40-80", "location_area": "宝安区", "rating": 4.0}, {"name": "bibigo(宝安店)", "category": "韩式料理", "tags": ["韩式拌饭", "韩式快餐", "连锁"], "recommend": "石锅拌饭、韩式炸鸡、参鸡汤", "price_range": "40-80", "location_area": "宝安区", "rating": 4.0}];;
+
+// ====== CONSTANTS ======
+const RANDOM_HISTORY_MAX = 10;
+const STORAGE_KEYS = { favorites: 'eat_favs', hates: 'eat_hates', history: 'eat_history' };
+const CUISINE_GROUPS = [
+  { label: '🍜 粤菜/茶餐厅', match: c => /粤菜|茶餐厅|广式点心|港式|早茶|肠粉|烧腊|潮汕/.test(c) },
+  { label: '🌶️ 川菜/湘菜', match: c => /川菜|湘菜|酸菜鱼|麻辣/.test(c) },
+  { label: '🫕 火锅', match: c => /火锅/.test(c) },
+  { label: '🥩 烤肉/烧烤', match: c => /烤肉|烧烤|烧肉/.test(c) },
+  { label: '🍣 日料', match: c => /日料|寿司|日式|居酒屋/.test(c) },
+  { label: '🇰🇷 韩式', match: c => /韩式|韩国/.test(c) },
+  { label: '🥗 西餐/轻食', match: c => /西餐|牛排|轻食|西式|披萨|沙拉/.test(c) },
+  { label: '🍛 东南亚菜', match: c => /东南亚|泰国|越南|马来|新加坡/.test(c) },
+  { label: '🥟 西北/面食', match: c => /西北|面食|陕西|兰州/.test(c) },
+  { label: '🫖 江浙菜', match: c => /江浙|杭帮|淮扬|上海/.test(c) },
+  { label: '☕ 咖啡/茶饮', match: c => /咖啡|茶饮|奶茶/.test(c) },
+  { label: '🍰 甜品/烘焙', match: c => /甜品|糖水|烘焙|面包|蛋糕/.test(c) },
+  { label: '🍔 小吃/快餐', match: c => /小吃|快餐|炸鸡|汉堡/.test(c) },
+  { label: '🍢 其他', match: c => true }
+];
+
+function getCuisineGroup(category) {
+  for (const g of CUISINE_GROUPS) {
+    if (g.match(category)) return g.label;
+  }
+  return '🍢 其他';
+}
+
+// ====== STORAGE ======
+function getFavorites() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.favorites) || '[]'); }
+function setFavorites(f) { localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(f)); }
+function getHates() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.hates) || '[]'); }
+function setHates(h) { localStorage.setItem(STORAGE_KEYS.hates, JSON.stringify(h)); }
+function getHistory() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.history) || '[]'); }
+function setHistory(h) { localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(h)); }
+
+function isFavorite(name) { return getFavorites().includes(name); }
+function isHated(name) { return getHates().includes(name); }
+
+function toggleFav(name) {
+  let f = getFavorites();
+  if (f.includes(name)) { f = f.filter(n => n !== name); }
+  else { f.unshift(name); }
+  setFavorites(f);
+  updateFavBadge();
+  return f.includes(name);
+}
+
+function toggleHate(name) {
+  let h = getHates();
+  if (h.includes(name)) { h = h.filter(n => n !== name); }
+  else { h.unshift(name); }
+  setHates(h);
+  return h.includes(name);
+}
+
+function addHistory(restaurant) {
+  let h = getHistory();
+  h = h.filter(item => item.name !== restaurant.name);
+  h.unshift({ ...restaurant, time: new Date().toLocaleString('zh-CN') });
+  if (h.length > 200) h = h.slice(0, 200);
+  setHistory(h);
+}
+
+// ====== FILTER STATE ======
+let activeCuisineGroup = 'all';
+let activeArea = 'all';
+let searchQuery = '';
+
+function getFiltered() {
+  return RESTAURANTS.filter(r => {
+    if (searchQuery && !r.name.includes(searchQuery)) return false;
+    if (activeCuisineGroup !== 'all' && getCuisineGroup(r.category) !== activeCuisineGroup) return false;
+    if (activeArea !== 'all' && !r.location_area.includes(activeArea)) return false;
+    return true;
+  });
+}
+
+// ====== RENDER MENU ======
+function renderMenu() {
+  const grid = document.getElementById('resto-grid');
+  const list = getFiltered();
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-lulu">😅</div><div class="empty-text">没有找到匹配的餐厅~<br>换个条件试试！</div></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(r => {
+    const fav = isFavorite(r.name);
+    const hate = isHated(r.name);
+    return `
+    <div class="resto-card ${hate ? 'hated' : ''}">
+      <div class="resto-card-header">
+        <span class="resto-name">${r.name}</span>
+        <span class="resto-rating">⭐ ${r.rating}</span>
+      </div>
+      <div class="resto-tags">
+        <span class="resto-tag cuisine-tag">${getCuisineGroup(r.category)}</span>
+        <span class="resto-tag">${r.price_range}元</span>
+        <span class="resto-tag">${r.location_area}</span>
+      </div>
+      <div class="resto-recommend">💡 ${r.recommend}</div>
+      <div class="resto-card-actions">
+        <button class="resto-action ${fav ? 'active-fav' : ''}" onclick="event.stopPropagation(); toggleFav('${r.name}'); renderMenu();">
+          ${fav ? '❤️' : '🤍'} 收藏
+        </button>
+        <button class="resto-action ${hate ? 'active-hate' : ''}" onclick="event.stopPropagation(); toggleHate('${r.name}'); renderMenu();">
+          ${hate ? '💔' : '🤍'} 踩雷
+        </button>
+        <button class="resto-action" onclick="event.stopPropagation(); eatNow('${r.name}')">
+          🍽️ 就吃这个
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function eatNow(name) {
+  const r = RESTAURANTS.find(x => x.name === name);
+  if (!r) return;
+  addHistory(r);
+  switchPage('history');
+}
+
+// ====== FILTER CHIPS ======
+function buildFilterChips() {
+  const scroll = document.getElementById('filter-scroll');
+  const groups = [...new Set(RESTAURANTS.map(r => getCuisineGroup(r.category)))];
+  scroll.innerHTML = `<button class="filter-chip active" data-cat="all" onclick="setCuisineFilter('all')">🍽️ 全部</button>` +
+    groups.map(g => `<button class="filter-chip" data-cat="${g}" onclick="setCuisineFilter('${g}')">${g}</button>`).join('');
+}
+
+function setCuisineFilter(cat) {
+  activeCuisineGroup = cat;
+  document.querySelectorAll('.filter-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.cat === cat);
+  });
+  renderMenu();
+}
+
+function onSearch(q) {
+  searchQuery = q;
+  renderMenu();
+}
+
+// ====== FILTER DROPDOWN ======
+function toggleFilterDropdown() {
+  const dd = document.getElementById('filter-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  if (dd.style.display === 'block') buildFilterDropdown();
+}
+
+function buildFilterDropdown() {
+  // Cuisines
+  const cuisineDiv = document.getElementById('filter-cuisine');
+  const groups = [...new Set(RESTAURANTS.map(r => getCuisineGroup(r.category)))];
+  cuisineDiv.innerHTML = `<button class="filter-grid-chip active" data-val="all" onclick="setCuisineDropdown('all')">全部</button>` +
+    groups.map(g => `<button class="filter-grid-chip" data-val="${g}" onclick="setCuisineDropdown('${g}')">${g}</button>`).join('');
+
+  // Areas
+  const areaDiv = document.getElementById('filter-area');
+  const areas = [...new Set(RESTAURANTS.map(r => r.location_area))].sort();
+  areaDiv.innerHTML = `<button class="filter-grid-chip active" data-val="all" onclick="setAreaDropdown('all')">全部</button>` +
+    areas.map(a => `<button class="filter-grid-chip" data-val="${a}" onclick="setAreaDropdown('${a}')">${a}</button>`).join('');
+}
+
+function setCuisineDropdown(cat) {
+  activeCuisineGroup = cat;
+  document.querySelectorAll('#filter-cuisine .filter-grid-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.val === cat);
+  });
+  document.querySelectorAll('.filter-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.cat === cat);
+  });
+  renderMenu();
+}
+
+function setAreaDropdown(area) {
+  activeArea = area;
+  document.querySelectorAll('#filter-area .filter-grid-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.val === area);
+  });
+  renderMenu();
+}
+
+// ====== RANDOM ======
+let randomResult = null;
+
+function updateRandomBtn() {
+  const filtered = getRandomFiltered();
+  document.getElementById('random-range-info').textContent = `可在 ${filtered.length} 家中随机`;
+}
+
+function getRandomFiltered() {
+  let list = [...RESTAURANTS];
+  const cuisine = document.getElementById('random-cuisine').value;
+  const area = document.getElementById('random-area').value;
+  const price = document.getElementById('random-price').value;
+  if (cuisine !== 'all') {
+    if (cuisine === '__other') list = list.filter(r => !CUISINE_GROUPS.some(g => g.match(r.category)));
+    else list = list.filter(r => getCuisineGroup(r.category) === cuisine);
+  }
+  if (area !== 'all') list = list.filter(r => r.location_area.includes(area));
+  if (price !== 'all') {
+    if (price === '0-50') list = list.filter(r => parseInt(r.price_range) <= 50);
+    else if (price === '50-100') list = list.filter(r => { const p = parseInt(r.price_range); return p > 50 && p <= 100; });
+    else if (price === '100-200') list = list.filter(r => { const p = parseInt(r.price_range); return p > 100 && p <= 200; });
+    else if (price === '200+') list = list.filter(r => parseInt(r.price_range) > 200);
+  }
+  // Exclude hated
+  const hates = getHates();
+  list = list.filter(r => !hates.includes(r.name));
+  return list;
+}
+
+function triggerRandom() {
+  const list = getRandomFiltered();
+  if (list.length === 0) {
+    alert('😅 符合条件的餐厅都被你踩雷了！换个条件试试~');
+    return;
+  }
+  const chosen = list[Math.floor(Math.random() * list.length)];
+  randomResult = chosen;
+  addHistory(chosen);
+
+  // Show result
+  const card = document.getElementById('random-card');
+  const result = document.getElementById('result-card');
+  card.style.display = 'none';
+  result.style.display = 'block';
+
+  document.getElementById('result-name').textContent = chosen.name;
+  document.getElementById('result-tags').innerHTML =
+    `<span class="resto-tag cuisine-tag">${getCuisineGroup(chosen.category)}</span>
+     <span class="resto-tag">${chosen.price_range}元</span>
+     <span class="resto-tag">${chosen.location_area}</span>
+     <span class="resto-tag">⭐${chosen.rating}</span>`;
+  document.getElementById('result-detail').textContent = '💡 ' + chosen.recommend;
+
+  // Add to recent
+  updateRecentRandom(chosen);
+  renderHistory();
+}
+
+function closeResult() {
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('random-card').style.display = 'block';
+}
+
+function markRandomFav() {
+  if (!randomResult) return;
+  toggleFav(randomResult.name);
+  document.querySelector('.fav-btn').textContent = '❤️ 已收藏';
+  document.querySelector('.fav-btn').style.background = '#FFB6C1';
+  updateFavBadge();
+}
+
+function markRandomHate() {
+  if (!randomResult) return;
+  toggleHate(randomResult.name);
+  document.querySelector('.hate-btn').textContent = '💔 已踩雷';
+  document.querySelector('.hate-btn').style.background = '#ddd';
+  updateFavBadge();
+}
+
+let recentRandoms = [];
+
+function updateRecentRandom(r) {
+  recentRandoms = recentRandoms.filter(x => x.name !== r.name);
+  recentRandoms.unshift(r);
+  if (recentRandoms.length > RANDOM_HISTORY_MAX) recentRandoms = recentRandoms.slice(0, RANDOM_HISTORY_MAX);
+  renderRecentRandom();
+}
+
+function renderRecentRandom() {
+  const list = document.getElementById('recent-random-list');
+  list.innerHTML = recentRandoms.map(r => `
+    <div class="recent-random-item" onclick="pickAgain('${r.name}')">
+      <span class="recent-item-name">${r.name}</span>
+      <span class="recent-item-info">${getCuisineGroup(r.category)} · ${r.price_range}元</span>
+    </div>
+  `).join('');
+}
+
+function pickAgain(name) {
+  const r = RESTAURANTS.find(x => x.name === name);
+  if (!r) return;
+  randomResult = r;
+  const card = document.getElementById('random-card');
+  const result = document.getElementById('result-card');
+  card.style.display = 'none';
+  result.style.display = 'block';
+  document.getElementById('result-name').textContent = r.name;
+  document.getElementById('result-tags').innerHTML =
+    `<span class="resto-tag cuisine-tag">${getCuisineGroup(r.category)}</span>
+     <span class="resto-tag">${r.price_range}元</span>
+     <span class="resto-tag">${r.location_area}</span>
+     <span class="resto-tag">⭐${r.rating}</span>`;
+  document.getElementById('result-detail').textContent = '💡 ' + r.recommend;
+}
+
+// ====== FAVORITES ======
+function renderFavorites() {
+  const favs = getFavorites();
+  const list = document.getElementById('fav-list');
+  const empty = document.getElementById('fav-empty');
+  const count = document.getElementById('fav-count');
+  count.textContent = favs.length;
+
+  if (favs.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  list.innerHTML = favs.map(name => {
+    const r = RESTAURANTS.find(x => x.name === name);
+    if (!r) return '';
+    return `
+    <div class="resto-card">
+      <div class="resto-card-header">
+        <span class="resto-name">${r.name}</span>
+        <span class="resto-rating">⭐ ${r.rating}</span>
+      </div>
+      <div class="resto-tags">
+        <span class="resto-tag cuisine-tag">${getCuisineGroup(r.category)}</span>
+        <span class="resto-tag">${r.price_range}元</span>
+        <span class="resto-tag">${r.location_area}</span>
+      </div>
+      <div class="resto-recommend">💡 ${r.recommend}</div>
+      <div class="resto-card-actions">
+        <button class="resto-action active-fav" onclick="toggleFav('${r.name}'); renderFavorites(); updateFavBadge();">❤️ 取消收藏</button>
+        <button class="resto-action" onclick="addHistory(r); switchPage('history')">🍽️ 就吃这个</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ====== HISTORY ======
+function renderHistory() {
+  const h = getHistory();
+  const list = document.getElementById('history-list');
+  const empty = document.getElementById('history-empty');
+  const count = document.getElementById('history-count');
+  count.textContent = h.length;
+
+  if (h.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Stats
+  const total = h.length;
+  const uniqueCount = new Set(h.map(x => x.name)).size;
+  const statsHtml = `
+    <div class="history-stats">
+      <div class="stat-card"><span class="stat-num">${total}</span> 次点餐</div>
+      <div class="stat-card"><span class="stat-num">${uniqueCount}</span> 家餐厅</div>
+    </div>
+  `;
+
+  list.innerHTML = statsHtml + h.map(item => `
+    <div class="history-item">
+      <div class="history-item-left">
+        <div class="history-item-name">${item.name}</div>
+        <div class="history-item-info">${getCuisineGroup(item.category)} · ${item.location_area}</div>
+      </div>
+      <div class="history-item-right">
+        <span class="history-time">${item.time}</span>
+        <button class="history-eat-again" onclick="eatAgain('${item.name}')">再吃 🍽️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function eatAgain(name) {
+  const r = RESTAURANTS.find(x => x.name === name);
+  if (!r) return;
+  addHistory(r);
+  renderHistory();
+}
+
+// ====== NAVIGATION ======
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+
+  if (page === 'favorites') renderFavorites();
+  if (page === 'history') renderHistory();
+  if (page === 'random') updateRandomBtn();
+  if (page === 'menu') renderMenu();
+}
+
+function updateFavBadge() {
+  const count = getFavorites().length;
+  const badge = document.getElementById('fav-badge');
+  if (count > 0) { badge.style.display = 'inline'; badge.textContent = count; }
+  else { badge.style.display = 'none'; }
+}
+
+function scrollToTop() {
+  document.getElementById('resto-grid').parentElement.scrollTop = 0;
+}
+
+// ====== BUILD RANDOM FILTERS ======
+function buildRandomFilters() {
+  const cuisine = document.getElementById('random-cuisine');
+  const groups = [...new Set(RESTAURANTS.map(r => getCuisineGroup(r.category)))];
+  cuisine.innerHTML = '<option value="all">不限菜系</option>' +
+    groups.map(g => `<option value="${g}">${g}</option>`).join('');
+
+  const area = document.getElementById('random-area');
+  const areas = [...new Set(RESTAURANTS.map(r => r.location_area))].sort();
+  area.innerHTML = '<option value="all">不限区域</option>' +
+    areas.map(a => `<option value="${a}">${a}</option>`).join('');
+
+  const price = document.getElementById('random-price');
+  price.innerHTML = `
+    <option value="all">不限价位</option>
+    <option value="0-50">50元以下</option>
+    <option value="50-100">50~100元</option>
+    <option value="100-200">100~200元</option>
+    <option value="200+">200元以上</option>`;
+}
+
+// ====== INIT ======
+function init() {
+  buildFilterChips();
+  buildFilterDropdown();
+  buildRandomFilters();
+  renderMenu();
+  renderFavorites();
+  renderHistory();
+  updateFavBadge();
+  updateRandomBtn();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+<style>
+/* ====== CSS VARIABLES ====== */
+:root {
+  --pink: #FFB6C1;
+  --light-pink: #FFF0F0;
+  --peach: #FFD1DC;
+  --blush: #FF8FAB;
+  --bg: #FFF9F9;
+  --dark: #4A4A4A;
+  --shadow: rgba(255, 182, 193, 0.25);
+  --radius: 16px;
+  --card-radius: 20px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  overflow: hidden;
+  height: 100vh;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ====== HEADER ====== */
+header {
+  text-align: center;
+  padding: 12px 16px 6px;
+  background: linear-gradient(180deg, #FFF5F5 0%, var(--bg) 100%);
+  flex-shrink: 0;
+}
+
+.header-lulu {
+  width: 80px;
+  height: 66px;
+  margin: 0 auto 4px;
+}
+
+.lulu-svg { width: 100%; height: 100%; }
+
+.app-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #E06080;
+  letter-spacing: 1px;
+}
+
+.app-subtitle {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+/* ====== FILTER BAR ====== */
+.filter-bar {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  background: white;
+  border-bottom: 1px solid #f5e6e6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.filter-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-scroll::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #f0d0d0;
+  background: white;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.filter-chip.active {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.filter-dropdown-btn {
+  font-size: 12px;
+  color: #999;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 8px;
+}
+
+.filter-dropdown {
+  background: white;
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  border: 1px solid #f5e6e6;
+}
+
+.filter-section { margin-bottom: 10px; }
+.filter-section:last-child { margin-bottom: 0; }
+
+.filter-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-grid-chip {
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #f0d0d0;
+  background: white;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-grid-chip.active {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: white;
+}
+
+/* ====== PAGES ====== */
+.pages-container { flex: 1; overflow: hidden; position: relative; }
+
+.page {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 80px;
+  -webkit-overflow-scrolling: touch;
+}
+.page.active { display: block; }
+
+/* ====== SEARCH BAR ====== */
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #FFF5F5;
+  border-radius: 25px;
+  padding: 8px 16px;
+  margin-bottom: 12px;
+  border: 1.5px solid #f5e6e6;
+}
+.search-icon { font-size: 16px; margin-right: 8px; }
+.search-bar input {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--dark);
+}
+.search-bar input::placeholder { color: #ccc; }
+
+/* ====== RESTO GRID ====== */
+.resto-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resto-card {
+  background: white;
+  border-radius: var(--card-radius);
+  padding: 14px 16px;
+  box-shadow: 0 2px 10px var(--shadow);
+  border: 1px solid #f5e6e6;
+  transition: transform 0.2s;
+}
+.resto-card:active { transform: scale(0.98); }
+.resto-card.hated { opacity: 0.5; filter: grayscale(0.3); }
+
+.resto-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.resto-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dark);
+  flex: 1;
+  line-height: 1.3;
+}
+
+.resto-rating {
+  font-size: 13px;
+  color: #E07050;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.resto-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.resto-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #FFF5F5;
+  color: #888;
+  border: 1px solid #f5e6e6;
+}
+.resto-tag.cuisine-tag {
+  background: var(--light-pink);
+  color: #E06080;
+  border-color: var(--peach);
+}
+
+.resto-recommend {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.resto-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.resto-action {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 12px;
+  border: 1px solid #f0d0d0;
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #888;
+}
+.resto-action.active-fav {
+  background: #FFF0F0;
+  border-color: var(--pink);
+  color: #E06080;
+}
+.resto-action.active-hate {
+  background: #f5f5f5;
+  border-color: #ddd;
+  color: #999;
+}
+
+.scroll-top {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--pink);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 2px 10px var(--shadow);
+  cursor: pointer;
+  z-index: 20;
+}
+
+/* ====== RANDOM PAGE ====== */
+.random-container {
+  padding-top: 8px;
+}
+
+.random-controls {
+  background: white;
+  border-radius: var(--card-radius);
+  padding: 14px 16px;
+  box-shadow: 0 2px 10px var(--shadow);
+  border: 1px solid #f5e6e6;
+  margin-bottom: 16px;
+}
+
+.random-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #E06080;
+  margin-bottom: 8px;
+}
+
+.random-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.random-filters select {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #f0d0d0;
+  background: white;
+  font-size: 13px;
+  color: var(--dark);
+  outline: none;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+.random-range-info {
+  text-align: center;
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 8px;
+}
+
+.random-card {
+  background: linear-gradient(135deg, #FFF5F5 0%, white 100%);
+  border-radius: var(--card-radius);
+  padding: 40px 20px;
+  text-align: center;
+  box-shadow: 0 4px 20px var(--shadow);
+  border: 2px dashed var(--peach);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.random-card:active { transform: scale(0.97); }
+
+.random-question {
+  font-size: 20px;
+  font-weight: 700;
+  color: #E06080;
+  margin-bottom: 20px;
+}
+
+.random-btn {
+  background: linear-gradient(135deg, #FFB6C1 0%, #FF8FAB 100%);
+  border: none;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 14px 40px;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 143, 171, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.random-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(255, 143, 171, 0.3);
+}
+
+.random-hint {
+  font-size: 12px;
+  color: #ccc;
+  margin-top: 12px;
+}
+
+/* Result Card */
+.result-card {
+  background: white;
+  border-radius: var(--card-radius);
+  padding: 24px 20px;
+  text-align: center;
+  box-shadow: 0 4px 20px var(--shadow);
+  border: 1px solid #f5e6e6;
+  position: relative;
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.result-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 20px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.result-lulu {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.result-label {
+  font-size: 13px;
+  color: #E06080;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.result-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+
+.result-tags {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.result-detail {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.result-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.result-action-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #f0d0d0;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.result-action-btn.fav-btn:hover { background: #FFF0F0; border-color: var(--pink); color: #E06080; }
+.result-action-btn.hate-btn:hover { background: #f5f5f5; }
+.result-action-btn.again-btn {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: white;
+}
+
+/* Recent Random */
+.recent-random {
+  margin-top: 16px;
+}
+
+.recent-random-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+.recent-random-item {
+  background: white;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px var(--shadow);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.recent-random-item:active { transform: scale(0.97); }
+
+.recent-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.recent-item-info {
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* ====== EMPTY STATE ====== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+.empty-lulu {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+.empty-text {
+  font-size: 15px;
+  color: #bbb;
+  line-height: 1.6;
+}
+
+/* ====== FAVORITES ====== */
+.fav-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fav-header-icon { font-size: 18px; }
+
+.fav-count {
+  background: var(--pink);
+  color: white;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* ====== HISTORY ====== */
+.history-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.stat-card {
+  flex: 1;
+  background: white;
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px var(--shadow);
+  border: 1px solid #f5e6e6;
+  font-size: 13px;
+  color: #999;
+}
+
+.stat-num {
+  font-size: 24px;
+  font-weight: 700;
+  color: #E06080;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.history-item {
+  background: white;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px var(--shadow);
+  border: 1px solid #f5e6e6;
+}
+
+.history-item-left { flex: 1; min-width: 0; }
+
+.history-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item-info {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.history-item-right {
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.history-time {
+  font-size: 10px;
+  color: #ccc;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.history-eat-again {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--pink);
+  background: white;
+  color: #E06080;
+  cursor: pointer;
+}
+
+/* ====== BOTTOM NAV ====== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  background: white;
+  border-top: 1px solid #f0e0e0;
+  padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  z-index: 100;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  border: none;
+  background: none;
+  color: #bbb;
+}
+.nav-item.active {
+  color: #E06080;
+}
+
+.nav-icon {
+  font-size: 22px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.nav-badge {
+  position: absolute;
+  top: 0;
+  right: 50%;
+  transform: translateX(20px);
+  background: #FF6B8A;
+  color: white;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 380px) {
+  .app-title { font-size: 19px; }
+  .random-question { font-size: 17px; }
+  .random-btn { font-size: 16px; padding: 12px 30px; }
+}
+</style>
+</body>
+</html>
