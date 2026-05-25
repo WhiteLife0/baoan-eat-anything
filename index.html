@@ -345,13 +345,14 @@ function createRoom(){
   if(peer){peer.destroy()}
   myPicks=[];oppPicks=[];gameStarted=false;myConfirmed=false;oppConfirmed=false;
   let code=String(Math.floor(100000+Math.random()*900000));
-  peer=new Peer(code);
+  let peerId='eat'+code;
+  peer=new Peer(peerId);
   peer.on('open',id=>{
     currentPeerId=id;
     isHost=true;
     document.getElementById('battle-connect').style.display='none';
     document.getElementById('battle-lobby').style.display='block';
-    document.getElementById('code-show').innerHTML=`匹配码<div style="font-size:34px;font-weight:900;margin-top:6px;letter-spacing:6px">${id}</div>`;
+    document.getElementById('code-show').innerHTML=`匹配码<div style="font-size:40px;font-weight:900;margin-top:8px;letter-spacing:4px">${id.replace('eat','')}</div>`;
     document.getElementById('peer-status').textContent='等待对方加入...';
     t('房间已开启！');
   });
@@ -366,13 +367,14 @@ function createRoom(){
 function joinRoom(){
   let code=document.getElementById('join-code').value.trim();
   if(!code){t('请输入匹配码');return}
+  let peerId='eat'+code;
   if(peer){peer.destroy()}
   myPicks=[];oppPicks=[];gameStarted=false;myConfirmed=false;oppConfirmed=false;
   peer=new Peer();
   peer.on('open',id=>{
     currentPeerId=id;
     isHost=false;
-    conn=peer.connect(code,{reliable:true});
+    conn=peer.connect(peerId,{reliable:true});
     setupConn();
     document.getElementById('battle-connect').style.display='none';
     document.getElementById('battle-lobby').style.display='block';
